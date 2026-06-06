@@ -1,0 +1,92 @@
+name: Wellspot CI/CD
+on:
+  push:
+    branches: [prod]
+
+jobs:
+  web-deploy:
+    name: Deploying
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+        # Install PHP 8.4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, intl, pdo, openssl, zip
+          coverage: none
+
+      # Copy .env file from example if not already present
+      - name: Copy .env
+        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+
+      # Install Composer dependencies (including dev dependencies)
+      - name: Install Composer Dependencies
+        run: composer install --prefer-dist --no-progress
+
+      # Set up Node.js for Vite
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20' # Specify the version of Node.js you need could be 18
+
+      # Install NPM dependencies
+      - name: Install NPM Dependencies
+        run: npm install
+
+      # Build Vite files
+      - name: Build Vite Files
+        run: npm run build
+
+      # Generate application key
+      # - name: Generate Key
+      #   run: php artisan key:generate
+
+      # Run database migrations
+      # - name: Run Migrations
+      #   run: php artisan migrate --force
+
+      # Clear caches
+      # - name: Clear Cache
+      #   run: php artisan cache:clear
+
+      # Clear and cache routes
+      # - name: Cache Routes
+      #   run: php artisan route:cache
+
+      # Clear and cache config
+      # - name: Cache Config
+      #   run: php artisan config:cache
+
+      # Clear and cache views
+      # - name: Cache Views
+      #   run: php artisan view:cache
+
+      # Set directory permissions
+      - name: Directory Permissions
+        run: chmod -R 775 storage
+
+      # Remove directories before syncing
+      - name: Remove vendor and node_modules
+        run: |
+          rm -rf vendor
+          rm -rf node_modules
+
+      # Sync files to the server via FTP
+      - name: 📂 Sync files
+        uses: SamKirkland/FTP-Deploy-Action@4.0.0
+        with:
+          server: ${{ secrets.SERVER }}
+          username: ${{ secrets.USERNAME }}
+          password: ${{ secrets.PASSWORD }}
+          exclude: |
+            **/.git*
+            **/node_modules/**
+            **/tests/**
+            **/.github/**
+            **/vendor/**
