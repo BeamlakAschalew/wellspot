@@ -18,6 +18,7 @@ Route::get('/', HomeController::class)->name('home');
 Route::get('/explore', ExploreController::class)->name('explore');
 Route::post('locale', LocaleController::class)->name('locale.update');
 Route::inertia('/quiz', 'quiz')->name('quiz');
+Route::inertia('/response', 'response')->name('response');
 Route::get('providers/{provider}', ProviderDetailController::class)->name('providers.show');
 Route::post('bookings', [BookingController::class, 'store'])->name('bookings.store');
 Route::post('reviews', [ReviewController::class, 'store'])->name('reviews.store');

@@ -1,9 +1,8 @@
-import React from 'react';
-import { Header } from '@/components/user/header';
-import WellSpotFooter from '@/components/user/footerSmall';
 import ResponseCard from '@/components/quiz/response';
+import WellSpotFooter from '@/components/user/footerSmall';
+import { Header } from '@/components/user/header';
 
-const response = () => {
+export default function Response() {
     return (
         <div>
             <Header />
@@ -11,6 +10,4 @@ const response = () => {
             <WellSpotFooter />
         </div>
     );
-};
-
-export default response;
+}

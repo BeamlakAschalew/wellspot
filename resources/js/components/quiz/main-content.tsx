@@ -1,7 +1,17 @@
+import { router } from '@inertiajs/react';
 import { useState } from 'react';
-import sleepImage from '@/assets/quiz/image-02.jpg';
 import { useTranslation } from '@/lib/i18n';
-import { questions as wellnessQuestions } from '@/routes/api/wellness';
+import { response as wellnessResponse } from '@/routes';
+
+import {
+    questions as wellnessQuestions,
+    recommendations as wellnessRecommendations,
+} from '@/routes/api/wellness';
+import { WELLNESS_RECOMMENDATION_STORAGE_KEY } from '@/types/wellness';
+import type {
+    WellnessAnswer,
+    WellnessRecommendationResult,
+} from '@/types/wellness';
 
 const optionIcons = [
     'self_improvement',
@@ -30,13 +40,9 @@ type QuestionsResponse = {
     questions: AiQuestion[];
 };
 
-type SelectedAnswer = {
-    question_key: string;
-    question: string;
-    value: string;
-    label: string;
-    category_slugs: string[];
-    keywords: string[];
+type RecommendationsResponse = {
+    summary: string;
+    recommendations: WellnessRecommendationResult['recommendations'];
 };
 
 function MaterialIcon({
@@ -59,34 +65,34 @@ export function QuizMainContent() {
     const [aiQuestions, setAiQuestions] = useState<AiQuestion[]>([]);
     const [openingMessage, setOpeningMessage] = useState<string | null>(null);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-    const [answers, setAnswers] = useState<Record<string, SelectedAnswer>>({});
+    const [answers, setAnswers] = useState<Record<string, WellnessAnswer>>({});
     const [isLoadingQuestions, setIsLoadingQuestions] = useState(false);
-    const [isComplete, setIsComplete] = useState(false);
+    const [isLoadingRecommendations, setIsLoadingRecommendations] =
+        useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const isFeelingStep = aiQuestions.length === 0 && !isComplete;
+    const isFeelingStep = aiQuestions.length === 0;
     const currentQuestion = aiQuestions[currentQuestionIndex];
     const totalQuestions = aiQuestions.length > 0 ? aiQuestions.length + 1 : 1;
     const currentStep = isFeelingStep
         ? 1
         : Math.min(currentQuestionIndex + 2, totalQuestions);
-    const progressPercentage = isComplete
-        ? 100
-        : Math.round((currentStep / totalQuestions) * 100);
+    const progressPercentage = Math.round((currentStep / totalQuestions) * 100);
     const selectedAnswer = currentQuestion
         ? answers[currentQuestion.key]
         : undefined;
+    const isProcessing = isLoadingQuestions || isLoadingRecommendations;
     const canGoNext = isFeelingStep
-        ? feeling.trim().length >= 3 && !isLoadingQuestions
-        : Boolean(selectedAnswer) && !isComplete;
+        ? feeling.trim().length >= 3 && !isProcessing
+        : Boolean(selectedAnswer) && !isProcessing;
     const questionProgressLabel =
-        aiQuestions.length > 0 || isComplete
+        aiQuestions.length > 0
             ? `Question ${currentStep} of ${totalQuestions}`
             : 'Question 1';
     const completionLabel =
-        aiQuestions.length > 0 || isComplete
-            ? `${progressPercentage}% Complete`
-            : 'Start';
+        aiQuestions.length > 0 ? `${progressPercentage}% Complete` : 'Start';
+    const isLastQuestion =
+        !isFeelingStep && currentQuestionIndex === aiQuestions.length - 1;
 
     async function fetchQuestions(): Promise<void> {
         const trimmedFeeling = feeling.trim();
@@ -131,7 +137,6 @@ export function QuizMainContent() {
             setAiQuestions(payload.questions);
             setCurrentQuestionIndex(0);
             setAnswers({});
-            setIsComplete(false);
         } catch (fetchError) {
             setError(
                 fetchError instanceof Error
@@ -157,6 +162,68 @@ export function QuizMainContent() {
         }));
     }
 
+    async function fetchRecommendations(): Promise<void> {
+        const selectedAnswers = Object.values(answers);
+
+        if (selectedAnswers.length === 0) {
+            setError('Choose an answer before asking for recommendations.');
+
+            return;
+        }
+
+        setIsLoadingRecommendations(true);
+        setError(null);
+
+        try {
+            const response = await fetch(wellnessRecommendations.url(), {
+                body: JSON.stringify({
+                    answers: selectedAnswers,
+                    feeling: feeling.trim(),
+                }),
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                method: wellnessRecommendations().method,
+            });
+            const payload =
+                (await response.json()) as Partial<RecommendationsResponse> & {
+                    message?: string;
+                };
+
+            if (!response.ok) {
+                throw new Error(
+                    payload.message ??
+                        'Provider recommendations could not be loaded right now.',
+                );
+            }
+
+            const result: WellnessRecommendationResult = {
+                answers: selectedAnswers,
+                feeling: feeling.trim(),
+                recommendations: payload.recommendations ?? [],
+                summary:
+                    payload.summary ??
+                    'Here are the providers that best match how you are feeling right now.',
+            };
+
+            sessionStorage.setItem(
+                WELLNESS_RECOMMENDATION_STORAGE_KEY,
+                JSON.stringify(result),
+            );
+
+            router.visit(wellnessResponse.url());
+        } catch (fetchError) {
+            setError(
+                fetchError instanceof Error
+                    ? fetchError.message
+                    : 'Provider recommendations could not be loaded right now.',
+            );
+        } finally {
+            setIsLoadingRecommendations(false);
+        }
+    }
+
     function handleNext(): void {
         if (isFeelingStep) {
             void fetchQuestions();
@@ -168,23 +235,17 @@ export function QuizMainContent() {
             return;
         }
 
-        if (currentQuestionIndex < aiQuestions.length - 1) {
+        if (!isLastQuestion) {
             setCurrentQuestionIndex((index) => index + 1);
 
             return;
         }
 
-        setIsComplete(true);
+        void fetchRecommendations();
     }
 
     function handlePrevious(): void {
         setError(null);
-
-        if (isComplete) {
-            setIsComplete(false);
-
-            return;
-        }
 
         if (currentQuestionIndex > 0) {
             setCurrentQuestionIndex((index) => index - 1);
@@ -199,14 +260,10 @@ export function QuizMainContent() {
 
     const title = isFeelingStep
         ? 'How are you feeling today?'
-        : isComplete
-          ? 'Your wellness preferences are ready'
-          : currentQuestion?.label;
+        : currentQuestion?.label;
     const description = isFeelingStep
         ? 'Share what is present for you right now, even if it is just a few words.'
-        : isComplete
-          ? 'These answers are ready for the provider recommendation step.'
-          : openingMessage;
+        : openingMessage;
 
     return (
         <main className="flex w-full flex-grow items-center justify-center px-margin-mobile pt-24 pb-24 md:px-lg">
@@ -227,15 +284,6 @@ export function QuizMainContent() {
                                 style={{ width: `${progressPercentage}%` }}
                             />
                         </div>
-                    </div>
-
-                    <div className="relative h-48 w-full overflow-hidden">
-                        <img
-                            alt={t('quiz.question.imageAlt')}
-                            className="h-full w-full object-cover"
-                            src={sleepImage}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest to-transparent opacity-60" />
                     </div>
 
                     <div className="px-lg pb-lg">
@@ -268,7 +316,7 @@ export function QuizMainContent() {
                             </div>
                         ) : null}
 
-                        {!isFeelingStep && !isComplete && currentQuestion ? (
+                        {!isFeelingStep && currentQuestion ? (
                             <div className="grid grid-cols-1 gap-md md:grid-cols-2">
                                 {currentQuestion.options.map(
                                     (option, optionIndex) => {
@@ -322,24 +370,12 @@ export function QuizMainContent() {
                                 )}
                             </div>
                         ) : null}
-
-                        {isComplete ? (
-                            <div className="rounded-xl border border-primary-container/40 bg-primary-fixed/20 px-lg py-xl text-center">
-                                <MaterialIcon className="mb-sm text-4xl text-primary">
-                                    check_circle
-                                </MaterialIcon>
-                                <p className="font-body-md text-body-md text-on-surface-variant">
-                                    {Object.keys(answers).length} answers saved
-                                    for the next step.
-                                </p>
-                            </div>
-                        ) : null}
                     </div>
 
                     <div className="flex items-center justify-between border-t border-outline-variant/30 bg-surface-container-low px-lg py-md">
                         <button
                             className="flex items-center gap-xs rounded-lg px-md py-sm font-label-md text-label-md text-on-surface-variant transition-colors hover:bg-surface-container-high active:scale-95"
-                            disabled={isFeelingStep || isLoadingQuestions}
+                            disabled={isFeelingStep || isProcessing}
                             onClick={handlePrevious}
                             type="button"
                         >
@@ -350,18 +386,17 @@ export function QuizMainContent() {
                         </button>
                         <button
                             className="flex items-center gap-xs rounded-xl bg-primary-container px-xl py-md font-label-md text-label-md text-on-primary shadow-sm transition-all hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-                            disabled={!canGoNext || isLoadingQuestions}
+                            disabled={!canGoNext}
                             onClick={handleNext}
                             type="button"
                         >
-                            {isLoadingQuestions
+                            {isLoadingQuestions || isLoadingRecommendations
                                 ? 'Loading'
-                                : currentQuestionIndex ===
-                                        aiQuestions.length - 1 && !isFeelingStep
+                                : isLastQuestion
                                   ? 'Done'
                                   : 'Next'}
                             <MaterialIcon className="text-[18px]">
-                                {isLoadingQuestions
+                                {isLoadingQuestions || isLoadingRecommendations
                                     ? 'progress_activity'
                                     : 'arrow_forward'}
                             </MaterialIcon>
