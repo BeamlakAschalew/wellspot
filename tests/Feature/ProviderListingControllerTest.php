@@ -3,8 +3,12 @@
 use App\Models\Category;
 use App\Models\Provider;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 test('providers can create their listing from the guide route', function () {
+    Storage::fake('public');
+
     $category = Category::factory()->create();
     $user = User::factory()->create();
 
@@ -19,6 +23,7 @@ test('providers can create their listing from the guide route', function () {
         'neighborhood' => 'Bole',
         'latitude' => 9.0108,
         'longitude' => 38.7613,
+        'logo' => UploadedFile::fake()->image('bole-logo.jpg', 320, 320)->size(96),
         'status' => 'draft',
     ]);
 
@@ -29,6 +34,8 @@ test('providers can create their listing from the guide route', function () {
         ->slug->toBe('bole-recovery-studio')
         ->status->toBe('draft')
         ->published_at->toBeNull();
+
+    Storage::disk('public')->assertExists($user->providers()->first()->logo_path);
 });
 
 test('providers can update only their own listing', function () {

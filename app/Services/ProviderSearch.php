@@ -36,7 +36,7 @@ class ProviderSearch
     }
 
     /**
-     * @return Collection<int, array{id: int, name: string, slug: string, headline: ?string, description: ?string, category: ?array{name: string, slug: string}, services: array<int, array{name: string, price_amount: ?int, currency: ?string, duration_minutes: ?int}>, starting_price: ?int, currency: string, neighborhood: ?string, address: ?string, rating: ?float, reviews_count: int, is_featured: bool}>
+     * @return Collection<int, array{id: int, name: string, slug: string, logo_url: ?string, headline: ?string, description: ?string, category: ?array{name: string, slug: string}, services: array<int, array{name: string, price_amount: ?int, currency: ?string, duration_minutes: ?int}>, starting_price: ?int, currency: string, neighborhood: ?string, address: ?string, rating: ?float, reviews_count: int, is_featured: bool}>
      */
     public function providers(?string $search = null, ?string $location = null, ?string $category = null, int $limit = 12): Collection
     {
@@ -47,7 +47,7 @@ class ProviderSearch
     }
 
     /**
-     * @return Collection<int, array{id: int, name: string, slug: string, headline: ?string, description: ?string, category: ?array{name: string, slug: string}, services: array<int, array{name: string, price_amount: ?int, currency: ?string, duration_minutes: ?int}>, starting_price: ?int, currency: string, neighborhood: ?string, address: ?string, rating: ?float, reviews_count: int, is_featured: bool}>
+     * @return Collection<int, array{id: int, name: string, slug: string, logo_url: ?string, headline: ?string, description: ?string, category: ?array{name: string, slug: string}, services: array<int, array{name: string, price_amount: ?int, currency: ?string, duration_minutes: ?int}>, starting_price: ?int, currency: string, neighborhood: ?string, address: ?string, rating: ?float, reviews_count: int, is_featured: bool}>
      */
     public function topRated(int $limit = 4): Collection
     {
@@ -110,7 +110,7 @@ class ProviderSearch
     }
 
     /**
-     * @return array{id: int, name: string, slug: string, headline: ?string, description: ?string, category: ?array{name: string, slug: string}, services: array<int, array{name: string, price_amount: ?int, currency: ?string, duration_minutes: ?int}>, starting_price: ?int, currency: string, neighborhood: ?string, address: ?string, rating: ?float, reviews_count: int, is_featured: bool}
+     * @return array{id: int, name: string, slug: string, logo_url: ?string, headline: ?string, description: ?string, category: ?array{name: string, slug: string}, services: array<int, array{name: string, price_amount: ?int, currency: ?string, duration_minutes: ?int}>, starting_price: ?int, currency: string, neighborhood: ?string, address: ?string, rating: ?float, reviews_count: int, is_featured: bool}
      */
     protected function payload(Provider $provider): array
     {
@@ -121,6 +121,7 @@ class ProviderSearch
             'id' => $provider->id,
             'name' => $provider->name,
             'slug' => $provider->slug,
+            'logo_url' => $provider->logo_url,
             'headline' => $provider->headline,
             'description' => $provider->description,
             'category' => $provider->category ? [

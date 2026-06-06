@@ -21,6 +21,7 @@ test('home page includes live categories providers and top rated providers', fun
         ->for($massage)
         ->create([
             'name' => 'Bole Balance Spa',
+            'logo_path' => 'provider-logos/bole-balance.png',
             'headline' => 'Recovery massage near Bole.',
             'neighborhood' => 'Bole',
             'is_featured' => true,
@@ -59,11 +60,13 @@ test('home page includes live categories providers and top rated providers', fun
             ->where('categories.0.name', 'Spa & Massage')
             ->where('categories.0.providers_count', 1)
             ->where('providers.0.name', 'Bole Balance Spa')
+            ->where('providers.0.logo_url', $topRatedProvider->logo_url)
             ->where('providers.0.starting_price', 1200)
             ->where('providers.0.rating', 4.5)
             ->where('providers.0.reviews_count', 2)
             ->where('providers.0.services.0.name', 'Deep Tissue Massage')
             ->where('topRatedProviders.0.name', 'Bole Balance Spa')
+            ->where('topRatedProviders.0.logo_url', $topRatedProvider->logo_url)
         );
 });
 

@@ -20,6 +20,7 @@ export type SearchProvider = {
     id: number;
     name: string;
     slug: string;
+    logo_url: string | null;
     headline: string | null;
     description: string | null;
     category: {
@@ -79,9 +80,18 @@ export default function SearchCard({ provider }: SearchCardProps) {
                     </div>
 
                     <div>
-                        <h2 className="font-headline-lg text-headline-lg text-on-surface transition-colors group-hover:text-primary">
-                            {provider.name}
-                        </h2>
+                        <div className="flex min-w-0 items-center gap-md">
+                            {provider.logo_url && (
+                                <img
+                                    alt={`${provider.name} logo`}
+                                    className="h-14 w-14 shrink-0 rounded-lg border border-outline-variant/30 bg-surface-container object-cover"
+                                    src={provider.logo_url}
+                                />
+                            )}
+                            <h2 className="min-w-0 font-headline-lg text-headline-lg text-on-surface transition-colors group-hover:text-primary">
+                                {provider.name}
+                            </h2>
+                        </div>
                         <p className="mt-sm line-clamp-2 font-body-md text-body-md text-on-surface-variant">
                             {provider.headline ??
                                 provider.description ??
@@ -133,7 +143,16 @@ export default function SearchCard({ provider }: SearchCardProps) {
             </div>
 
             <div className="relative hidden bg-surface-container-low md:block">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(176,240,214,0.9),transparent_36%),linear-gradient(135deg,rgba(0,53,39,0.92),rgba(0,101,145,0.78))]" />
+                {provider.logo_url ? (
+                    <img
+                        alt={`${provider.name} logo`}
+                        className="absolute inset-0 h-full w-full object-cover"
+                        src={provider.logo_url}
+                    />
+                ) : (
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(176,240,214,0.9),transparent_36%),linear-gradient(135deg,rgba(0,53,39,0.92),rgba(0,101,145,0.78))]" />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/30 to-transparent" />
                 <div className="relative flex h-full flex-col justify-between p-lg text-on-primary">
                     <div className="self-end rounded-full bg-surface/95 px-sm py-xs font-label-sm text-label-sm text-on-surface shadow-sm">
                         {provider.reviews_count > 0 ? 'Trusted by clients' : 'New listing'}

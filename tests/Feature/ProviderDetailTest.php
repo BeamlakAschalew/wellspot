@@ -10,6 +10,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 test('published provider detail page shows profile and active services', function () {
     $provider = Provider::factory()->create([
         'name' => 'Bole Recovery Studio',
+        'logo_path' => 'provider-logos/bole-recovery.png',
         'amenities' => ['Parking', 'Private rooms'],
         'opening_hours' => ['weekdays' => '08:00-20:00'],
     ]);
@@ -41,6 +42,7 @@ test('published provider detail page shows profile and active services', functio
         ->assertInertia(fn (Assert $page) => $page
             ->component('details')
             ->where('provider.name', 'Bole Recovery Studio')
+            ->where('provider.logo_url', $provider->logo_url)
             ->where('provider.amenities.0', 'Parking')
             ->where('provider.opening_hours.weekdays', '08:00-20:00')
             ->where('provider.services.0.name', 'Deep Tissue Massage')

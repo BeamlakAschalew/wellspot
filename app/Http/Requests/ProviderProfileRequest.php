@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\File;
 
 class ProviderProfileRequest extends FormRequest
 {
@@ -26,6 +27,7 @@ class ProviderProfileRequest extends FormRequest
         return [
             'category_id' => ['required', 'integer', Rule::exists('categories', 'id')],
             'name' => ['required', 'string', 'max:120'],
+            'logo' => ['nullable', File::image()->max('2mb')],
             'headline' => ['nullable', 'string', 'max:180'],
             'description' => ['nullable', 'string', 'max:2000'],
             'phone' => ['nullable', 'string', 'max:40'],

@@ -21,6 +21,7 @@ test('explore page renders searchable provider results', function () {
         ->for($massage)
         ->create([
             'name' => 'Kazanchis Recovery Studio',
+            'logo_path' => 'provider-logos/kazanchis-recovery.png',
             'headline' => 'Therapeutic massage downtown.',
             'neighborhood' => 'Kazanchis',
             'address' => 'Kazanchis, Addis Ababa',
@@ -60,6 +61,7 @@ test('explore page renders searchable provider results', function () {
             ->has('providers', 1)
             ->where('providers.0.id', $matchingProvider->id)
             ->where('providers.0.name', 'Kazanchis Recovery Studio')
+            ->where('providers.0.logo_url', $matchingProvider->logo_url)
             ->where('providers.0.services.0.name', 'Deep Tissue Massage')
             ->where('providers.0.starting_price', 1200)
             ->where('providers.0.rating', 5)

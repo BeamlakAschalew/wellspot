@@ -3,6 +3,8 @@
 use App\Models\Category;
 use App\Models\Provider;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Support\SessionKey;
 
 test('providers can update and publish their profile', function () {
@@ -51,6 +53,44 @@ test('providers can update and publish their profile', function () {
         ->published_at->not->toBeNull();
 });
 
+test('providers can upload and replace their profile logo', function () {
+    Storage::fake('public');
+
+    $category = Category::factory()->create();
+    $user = User::factory()->create();
+    $provider = Provider::factory()
+        ->for($user)
+        ->for($category)
+        ->create(['logo_path' => 'provider-logos/old-logo.jpg']);
+
+    Storage::disk('public')->put('provider-logos/old-logo.jpg', 'old');
+
+    $response = $this->actingAs($user)->patch(route('provider.profile.update'), [
+        'category_id' => $category->id,
+        'name' => $provider->name,
+        'logo' => UploadedFile::fake()->image('logo.png', 400, 400)->size(128),
+        'headline' => $provider->headline,
+        'description' => $provider->description,
+        'phone' => $provider->phone,
+        'email' => $provider->email,
+        'address' => $provider->address,
+        'neighborhood' => $provider->neighborhood,
+        'latitude' => $provider->latitude,
+        'longitude' => $provider->longitude,
+        'status' => $provider->status,
+    ]);
+
+    $response->assertRedirect(route('provider.dashboard'));
+
+    expect($provider->refresh()->logo_path)
+        ->not->toBeNull()
+        ->not->toBe('provider-logos/old-logo.jpg');
+
+    Storage::disk('public')
+        ->assertExists($provider->logo_path)
+        ->assertMissing('provider-logos/old-logo.jpg');
+});
+
 test('provider profile validation rejects incomplete payloads', function () {
     $category = Category::factory()->create();
     $user = User::factory()->create();
@@ -64,6 +104,7 @@ test('provider profile validation rejects incomplete payloads', function () {
         'email' => 'not-an-email',
         'latitude' => 120,
         'longitude' => 220,
+        'logo' => UploadedFile::fake()->create('logo.pdf', 32, 'application/pdf'),
     ]);
 
     $response->assertSessionHasErrors([
@@ -74,5 +115,6 @@ test('provider profile validation rejects incomplete payloads', function () {
         'email',
         'latitude',
         'longitude',
+        'logo',
     ]);
 });

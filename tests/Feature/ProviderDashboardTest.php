@@ -46,7 +46,10 @@ test('provider dashboard includes service booking and review summaries', functio
     $provider = Provider::factory()
         ->for($owner)
         ->for($category)
-        ->create(['name' => 'Bole Balance Studio']);
+        ->create([
+            'name' => 'Bole Balance Studio',
+            'logo_path' => 'provider-logos/bole-balance-studio.png',
+        ]);
     $service = Service::factory()
         ->for($provider)
         ->for($category)
@@ -75,6 +78,7 @@ test('provider dashboard includes service booking and review summaries', functio
         ->assertInertia(fn (Assert $page) => $page
             ->component('dashboard')
             ->where('provider.name', 'Bole Balance Studio')
+            ->where('provider.logo_url', $provider->logo_url)
             ->where('stats.services', 1)
             ->where('stats.pending_bookings', 1)
             ->where('stats.completed_bookings', 1)

@@ -84,8 +84,8 @@ export default function SearchResult({
 
                 <main className="pt-16">
                     <section className="border-b border-outline-variant/30 bg-surface">
-                        <div className="mx-auto grid max-w-container-max gap-xl px-margin-mobile py-xl md:grid-cols-[minmax(0,1fr)_360px] md:px-lg md:py-2xl">
-                            <div className="flex flex-col justify-end">
+                        <div className="mx-auto grid w-full max-w-container-max items-end gap-xl px-margin-mobile py-xl md:px-lg md:py-2xl lg:grid-cols-[minmax(0,1fr)_360px]">
+                            <div className="min-w-0">
                                 <Link
                                     className="mb-lg inline-flex w-fit items-center gap-xs rounded-full border border-outline-variant px-md py-sm font-label-md text-label-md text-on-surface-variant transition hover:bg-surface-container"
                                     href={home.url()}
@@ -97,10 +97,10 @@ export default function SearchResult({
                                     <Sparkles className="h-4 w-4" />
                                     Explore WellSpot
                                 </p>
-                                <h1 className="max-w-3xl font-display text-display text-primary">
+                                <h1 className="w-full max-w-[48rem] font-display text-display text-balance text-primary">
                                     Find the right wellness provider.
                                 </h1>
-                                <p className="mt-md max-w-2xl font-body-lg text-body-lg text-on-surface-variant">
+                                <p className="mt-md w-full max-w-[42rem] font-body-lg text-body-lg text-pretty text-on-surface-variant">
                                     Compare published providers with active
                                     services, clear locations, starting prices,
                                     and real review signals.
@@ -108,7 +108,7 @@ export default function SearchResult({
                             </div>
 
                             <form
-                                className="self-end rounded-lg border border-outline-variant/40 bg-surface-container-low p-md shadow-sm"
+                                className="w-full rounded-lg border border-outline-variant/40 bg-surface-container-low p-md shadow-sm"
                                 onSubmit={submit}
                             >
                                 <div className="mb-md flex items-center gap-sm font-label-md text-label-md text-primary">
@@ -180,7 +180,7 @@ export default function SearchResult({
                         </div>
                     </section>
 
-                    <section className="mx-auto grid max-w-container-max gap-xl px-margin-mobile py-xl md:grid-cols-[260px_minmax(0,1fr)] md:px-lg md:py-2xl">
+                    <section className="mx-auto grid w-full max-w-container-max gap-xl px-margin-mobile py-xl md:grid-cols-[260px_minmax(0,1fr)] md:px-lg md:py-2xl">
                         <aside className="md:sticky md:top-24 md:self-start">
                             <div className="rounded-lg border border-outline-variant/40 bg-surface p-md">
                                 <div className="mb-md flex items-center justify-between gap-sm">
@@ -233,7 +233,8 @@ export default function SearchResult({
                             <div className="mb-lg flex flex-col justify-between gap-md border-b border-outline-variant/30 pb-md sm:flex-row sm:items-end">
                                 <div>
                                     <p className="font-label-md text-label-md text-secondary uppercase">
-                                        {activeCategory?.name ?? 'All providers'}
+                                        {activeCategory?.name ??
+                                            'All providers'}
                                     </p>
                                     <h2 className="mt-xs font-headline-lg text-headline-lg text-primary">
                                         {providers.length} result

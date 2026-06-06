@@ -12,9 +12,9 @@ class ProviderProfileController extends ProviderListingController
     public function update(ProviderProfileRequest $request): RedirectResponse
     {
         $provider = $this->providerForUser($request->user()->id);
-        $validated = $request->validated();
+        $validated = $this->validatedProfileAttributes($request);
 
-        $provider->fill([
+        $attributes = [
             ...$validated,
             'slug' => $provider->name === $validated['name']
                 ? $provider->slug
@@ -22,7 +22,13 @@ class ProviderProfileController extends ProviderListingController
             'published_at' => $validated['status'] === 'published'
                 ? ($provider->published_at ?? now())
                 : null,
-        ]);
+        ];
+
+        if ($logoPath = $this->storeLogo($request->file('logo'), $provider)) {
+            $attributes['logo_path'] = $logoPath;
+        }
+
+        $provider->fill($attributes);
         $provider->save();
 
         Inertia::flash('toast', [
