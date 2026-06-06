@@ -11,22 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('provider_subscriptions', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('provider_id')->constrained()->cascadeOnDelete();
-            $table->string('plan')->default('starter');
-            $table->string('status')->default('trialing')->index();
-            $table->unsignedInteger('amount');
-            $table->string('currency', 3)->default('ETB');
-            $table->string('payment_provider')->nullable();
-            $table->string('payment_reference')->nullable();
-            $table->timestamp('trial_ends_at')->nullable();
-            $table->timestamp('renews_at')->nullable();
-            $table->timestamp('ends_at')->nullable();
-            $table->timestamps();
-
-            $table->index(['provider_id', 'status']);
-        });
+        Schema::dropIfExists('provider_subscriptions');
     }
 
     /**
@@ -34,6 +19,19 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('provider_subscriptions');
+        Schema::create('provider_subscriptions', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('provider_id')->constrained()->cascadeOnDelete();
+            $table->string('plan')->default('starter');
+            $table->string('status')->default('trialing')->index();
+            $table->unsignedInteger('amount');
+            $table->string('currency', 3)->default('ETB');
+            $table->timestamp('trial_ends_at')->nullable();
+            $table->timestamp('renews_at')->nullable();
+            $table->timestamp('ends_at')->nullable();
+            $table->timestamps();
+
+            $table->index(['provider_id', 'status']);
+        });
     }
 };

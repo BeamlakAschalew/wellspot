@@ -1,14 +1,16 @@
 import { Form, Head } from '@inertiajs/react';
 import {
     CalendarClock,
-    CircleDollarSign,
+    CheckCircle2,
     ClipboardList,
+    Pencil,
     type LucideIcon,
     Plus,
     Sparkles,
     Star,
     Trash2,
 } from 'lucide-react';
+import ProviderProfileController from '@/actions/App/Http/Controllers/ProviderProfileController';
 import ProviderServiceController from '@/actions/App/Http/Controllers/ProviderServiceController';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +22,14 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -41,25 +51,28 @@ type ProviderSummary = {
     id: number;
     name: string;
     headline: string | null;
+    description: string | null;
     status: string;
+    category_id: number;
     address: string;
     neighborhood: string | null;
+    phone: string | null;
+    email: string | null;
+    latitude: string | null;
+    longitude: string | null;
     category: string | null;
-    subscription: {
-        plan: string;
-        status: string;
-        renews_at: string | null;
-    } | null;
 };
 
 type ProviderService = {
     id: number;
+    category_id: number | null;
     name: string;
     description: string | null;
     duration_minutes: number;
     price_amount: number;
     currency: string;
     status: string;
+    sort_order: number;
 };
 
 type ProviderBooking = {
@@ -89,7 +102,7 @@ type DashboardProps = {
     stats: {
         services: number;
         pending_bookings: number;
-        monthly_revenue: number;
+        completed_bookings: number;
         average_rating: number;
     };
 };
@@ -136,12 +149,14 @@ export default function Dashboard({
             <Head title="Provider dashboard" />
 
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-4">
-                <section className="grid gap-4 lg:grid-cols-[1.45fr_0.55fr]">
+                <section>
                     <Card className="rounded-lg">
                         <CardHeader className="gap-4 lg:flex-row lg:items-start lg:justify-between">
                             <div className="space-y-2">
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <Badge variant={statusTone(provider.status)}>
+                                    <Badge
+                                        variant={statusTone(provider.status)}
+                                    >
                                         {provider.status}
                                     </Badge>
                                     {provider.category && (
@@ -177,9 +192,9 @@ export default function Dashboard({
                                 value={stats.pending_bookings.toString()}
                             />
                             <Metric
-                                icon={CircleDollarSign}
-                                label="Month revenue"
-                                value={money(stats.monthly_revenue)}
+                                icon={CheckCircle2}
+                                label="Completed bookings"
+                                value={stats.completed_bookings.toString()}
                             />
                             <Metric
                                 icon={Star}
@@ -188,42 +203,22 @@ export default function Dashboard({
                             />
                         </CardContent>
                     </Card>
+                </section>
 
+                <section>
                     <Card className="rounded-lg">
                         <CardHeader>
-                            <CardTitle>Subscription</CardTitle>
+                            <CardTitle>Provider profile</CardTitle>
                             <CardDescription>
-                                Provider-side access for Chapa billing.
+                                Keep your marketplace details ready for
+                                discovery and bookings.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between gap-3">
-                                <span className="text-muted-foreground text-sm">
-                                    Plan
-                                </span>
-                                <Badge variant="outline">
-                                    {provider.subscription?.plan ?? 'starter'}
-                                </Badge>
-                            </div>
-                            <div className="flex items-center justify-between gap-3">
-                                <span className="text-muted-foreground text-sm">
-                                    Status
-                                </span>
-                                <Badge
-                                    variant={statusTone(
-                                        provider.subscription?.status ??
-                                            'trialing',
-                                    )}
-                                >
-                                    {provider.subscription?.status ??
-                                        'trialing'}
-                                </Badge>
-                            </div>
-                            <div className="text-muted-foreground text-sm">
-                                {provider.subscription?.renews_at
-                                    ? `Renews ${provider.subscription.renews_at}`
-                                    : 'Payment setup is ready for the next iteration.'}
-                            </div>
+                        <CardContent>
+                            <ProviderProfileForm
+                                provider={provider}
+                                categories={categories}
+                            />
                         </CardContent>
                     </Card>
                 </section>
@@ -233,8 +228,8 @@ export default function Dashboard({
                         <CardHeader>
                             <CardTitle>Add service</CardTitle>
                             <CardDescription>
-                                Publish a bookable offer for your wellness
-                                profile.
+                                Publish a bookable offer. Customers pay you in
+                                person.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -256,9 +251,7 @@ export default function Dashboard({
                                                 placeholder="Deep tissue massage"
                                                 required
                                             />
-                                            <InputError
-                                                message={errors.name}
-                                            />
+                                            <InputError message={errors.name} />
                                         </div>
 
                                         <div className="grid gap-2">
@@ -330,7 +323,7 @@ export default function Dashboard({
                                             </div>
                                             <div className="grid gap-2">
                                                 <Label htmlFor="price-amount">
-                                                    Price ETB
+                                                    In-person price ETB
                                                 </Label>
                                                 <Input
                                                     id="price-amount"
@@ -376,7 +369,8 @@ export default function Dashboard({
                         <CardHeader>
                             <CardTitle>Services</CardTitle>
                             <CardDescription>
-                                Your current provider-side catalog.
+                                Prices are displayed for customers; payment is
+                                collected in person.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-3">
@@ -386,7 +380,7 @@ export default function Dashboard({
                                 services.map((service) => (
                                     <div
                                         key={service.id}
-                                        className="border-border/70 grid gap-3 rounded-lg border p-4 md:grid-cols-[1fr_auto]"
+                                        className="grid gap-3 rounded-lg border border-border/70 p-4 md:grid-cols-[1fr_auto]"
                                     >
                                         <div className="space-y-2">
                                             <div className="flex flex-wrap items-center gap-2">
@@ -401,11 +395,11 @@ export default function Dashboard({
                                                     {service.status}
                                                 </Badge>
                                             </div>
-                                            <p className="text-muted-foreground line-clamp-2 text-sm">
+                                            <p className="line-clamp-2 text-sm text-muted-foreground">
                                                 {service.description ??
                                                     'No description yet.'}
                                             </p>
-                                            <div className="text-muted-foreground flex flex-wrap gap-3 text-sm">
+                                            <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                                                 <span>
                                                     {service.duration_minutes}{' '}
                                                     min
@@ -418,26 +412,32 @@ export default function Dashboard({
                                                 </span>
                                             </div>
                                         </div>
-                                        <Form
-                                            {...ProviderServiceController.destroy.form(
-                                                service.id,
-                                            )}
-                                            options={{
-                                                preserveScroll: true,
-                                            }}
-                                        >
-                                            {({ processing }) => (
-                                                <Button
-                                                    type="submit"
-                                                    variant="outline"
-                                                    size="icon"
-                                                    disabled={processing}
-                                                    aria-label={`Delete ${service.name}`}
-                                                >
-                                                    <Trash2 />
-                                                </Button>
-                                            )}
-                                        </Form>
+                                        <div className="flex gap-2 md:justify-end">
+                                            <ServiceEditDialog
+                                                service={service}
+                                                categories={categories}
+                                            />
+                                            <Form
+                                                {...ProviderServiceController.destroy.form(
+                                                    service.id,
+                                                )}
+                                                options={{
+                                                    preserveScroll: true,
+                                                }}
+                                            >
+                                                {({ processing }) => (
+                                                    <Button
+                                                        type="submit"
+                                                        variant="outline"
+                                                        size="icon"
+                                                        disabled={processing}
+                                                        aria-label={`Delete ${service.name}`}
+                                                    >
+                                                        <Trash2 />
+                                                    </Button>
+                                                )}
+                                            </Form>
+                                        </div>
                                     </div>
                                 ))
                             )}
@@ -450,7 +450,8 @@ export default function Dashboard({
                         <CardHeader>
                             <CardTitle>Booking queue</CardTitle>
                             <CardDescription>
-                                Recent customers waiting on your team.
+                                Recent customers waiting on your team. Collect
+                                payment in person.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-3">
@@ -460,17 +461,16 @@ export default function Dashboard({
                                 bookings.map((booking) => (
                                     <div
                                         key={booking.id}
-                                        className="border-border/70 grid gap-3 rounded-lg border p-4 md:grid-cols-[1fr_auto]"
+                                        className="grid gap-3 rounded-lg border border-border/70 p-4 md:grid-cols-[1fr_auto]"
                                     >
                                         <div>
                                             <div className="font-medium">
                                                 {booking.customer_name}
                                             </div>
-                                            <div className="text-muted-foreground text-sm">
+                                            <div className="text-sm text-muted-foreground">
                                                 {booking.service_name ??
                                                     'Service'}{' '}
-                                                at{' '}
-                                                {dateTime(booking.starts_at)}
+                                                at {dateTime(booking.starts_at)}
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3 md:justify-end">
@@ -508,7 +508,7 @@ export default function Dashboard({
                                 reviews.map((review) => (
                                     <div
                                         key={review.id}
-                                        className="border-border/70 rounded-lg border p-4"
+                                        className="rounded-lg border border-border/70 p-4"
                                     >
                                         <div className="flex items-start justify-between gap-3">
                                             <div>
@@ -516,7 +516,7 @@ export default function Dashboard({
                                                     {review.title ??
                                                         'Customer review'}
                                                 </div>
-                                                <div className="text-muted-foreground text-sm">
+                                                <div className="text-sm text-muted-foreground">
                                                     {review.reviewer_name ??
                                                         'WellSpot customer'}
                                                 </div>
@@ -526,7 +526,7 @@ export default function Dashboard({
                                                 <Star className="fill-current" />
                                             </Badge>
                                         </div>
-                                        <p className="text-muted-foreground mt-3 text-sm">
+                                        <p className="mt-3 text-sm text-muted-foreground">
                                             {review.comment ??
                                                 'No written comment.'}
                                         </p>
@@ -536,6 +536,399 @@ export default function Dashboard({
                         </CardContent>
                     </Card>
                 </section>
+            </div>
+        </>
+    );
+}
+
+function ProviderProfileForm({
+    provider,
+    categories,
+}: {
+    provider: ProviderSummary;
+    categories: CategoryOption[];
+}) {
+    return (
+        <Form
+            {...ProviderProfileController.update.form()}
+            options={{ preserveScroll: true }}
+            className="grid gap-4"
+        >
+            {({ errors, processing, recentlySuccessful }) => (
+                <>
+                    <div className="grid gap-4 lg:grid-cols-2">
+                        <div className="grid gap-2">
+                            <Label htmlFor="provider-name">Business name</Label>
+                            <Input
+                                id="provider-name"
+                                name="name"
+                                defaultValue={provider.name}
+                                required
+                            />
+                            <InputError message={errors.name} />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="provider-category">Category</Label>
+                            <Select
+                                name="category_id"
+                                defaultValue={String(provider.category_id)}
+                            >
+                                <SelectTrigger
+                                    id="provider-category"
+                                    className="w-full"
+                                >
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {categories.map((category) => (
+                                        <SelectItem
+                                            key={category.id}
+                                            value={String(category.id)}
+                                        >
+                                            {category.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <InputError message={errors.category_id} />
+                        </div>
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="provider-headline">Headline</Label>
+                        <Input
+                            id="provider-headline"
+                            name="headline"
+                            defaultValue={provider.headline ?? ''}
+                            placeholder="Calm recovery sessions near Bole"
+                        />
+                        <InputError message={errors.headline} />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="provider-description">
+                            Description
+                        </Label>
+                        <Textarea
+                            id="provider-description"
+                            name="description"
+                            defaultValue={provider.description ?? ''}
+                            placeholder="Share your care style, amenities, and what first-time customers should expect."
+                            rows={4}
+                        />
+                        <InputError message={errors.description} />
+                    </div>
+
+                    <div className="grid gap-4 lg:grid-cols-2">
+                        <div className="grid gap-2">
+                            <Label htmlFor="provider-phone">Phone</Label>
+                            <Input
+                                id="provider-phone"
+                                name="phone"
+                                defaultValue={provider.phone ?? ''}
+                                placeholder="+251911234567"
+                            />
+                            <InputError message={errors.phone} />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="provider-email">Email</Label>
+                            <Input
+                                id="provider-email"
+                                name="email"
+                                type="email"
+                                defaultValue={provider.email ?? ''}
+                                placeholder="hello@example.com"
+                            />
+                            <InputError message={errors.email} />
+                        </div>
+                    </div>
+
+                    <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+                        <div className="grid gap-2">
+                            <Label htmlFor="provider-address">Address</Label>
+                            <Input
+                                id="provider-address"
+                                name="address"
+                                defaultValue={provider.address}
+                                required
+                            />
+                            <InputError message={errors.address} />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="provider-neighborhood">
+                                Neighborhood
+                            </Label>
+                            <Input
+                                id="provider-neighborhood"
+                                name="neighborhood"
+                                defaultValue={provider.neighborhood ?? ''}
+                                placeholder="Bole"
+                            />
+                            <InputError message={errors.neighborhood} />
+                        </div>
+                    </div>
+
+                    <div className="grid gap-4 lg:grid-cols-3">
+                        <div className="grid gap-2">
+                            <Label htmlFor="provider-latitude">Latitude</Label>
+                            <Input
+                                id="provider-latitude"
+                                name="latitude"
+                                type="number"
+                                step="0.0000001"
+                                defaultValue={provider.latitude ?? ''}
+                                placeholder="9.0108"
+                            />
+                            <InputError message={errors.latitude} />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="provider-longitude">
+                                Longitude
+                            </Label>
+                            <Input
+                                id="provider-longitude"
+                                name="longitude"
+                                type="number"
+                                step="0.0000001"
+                                defaultValue={provider.longitude ?? ''}
+                                placeholder="38.7613"
+                            />
+                            <InputError message={errors.longitude} />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="provider-status">Status</Label>
+                            <Select
+                                name="status"
+                                defaultValue={provider.status}
+                            >
+                                <SelectTrigger
+                                    id="provider-status"
+                                    className="w-full"
+                                >
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="draft">Draft</SelectItem>
+                                    <SelectItem value="published">
+                                        Published
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <InputError message={errors.status} />
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                        <Button disabled={processing} type="submit">
+                            Save provider profile
+                        </Button>
+                        {recentlySuccessful && (
+                            <span className="text-sm text-muted-foreground">
+                                Saved
+                            </span>
+                        )}
+                    </div>
+                </>
+            )}
+        </Form>
+    );
+}
+
+function ServiceEditDialog({
+    service,
+    categories,
+}: {
+    service: ProviderService;
+    categories: CategoryOption[];
+}) {
+    return (
+        <Dialog>
+            <DialogTrigger asChild>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label={`Edit ${service.name}`}
+                >
+                    <Pencil />
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-xl">
+                <DialogHeader>
+                    <DialogTitle>Edit service</DialogTitle>
+                    <DialogDescription>
+                        Update the customer-facing details for this offer.
+                    </DialogDescription>
+                </DialogHeader>
+                <Form
+                    {...ProviderServiceController.update.form(service.id)}
+                    options={{ preserveScroll: true }}
+                    className="grid gap-4"
+                >
+                    {({ errors, processing, recentlySuccessful }) => (
+                        <>
+                            <ServiceFields
+                                categories={categories}
+                                service={service}
+                                errors={errors}
+                            />
+
+                            <div className="flex flex-wrap items-center gap-3">
+                                <Button disabled={processing} type="submit">
+                                    Save service
+                                </Button>
+                                {recentlySuccessful && (
+                                    <span className="text-sm text-muted-foreground">
+                                        Saved
+                                    </span>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </Form>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function ServiceFields({
+    categories,
+    service,
+    errors,
+}: {
+    categories: CategoryOption[];
+    service: ProviderService;
+    errors: Record<string, string>;
+}) {
+    return (
+        <>
+            <div className="grid gap-2">
+                <Label htmlFor={`service-${service.id}-name`}>Name</Label>
+                <Input
+                    id={`service-${service.id}-name`}
+                    name="name"
+                    defaultValue={service.name}
+                    required
+                />
+                <InputError message={errors.name} />
+            </div>
+
+            <div className="grid gap-2">
+                <Label htmlFor={`service-${service.id}-category`}>
+                    Category
+                </Label>
+                <Select
+                    name="category_id"
+                    defaultValue={
+                        service.category_id
+                            ? String(service.category_id)
+                            : undefined
+                    }
+                >
+                    <SelectTrigger
+                        id={`service-${service.id}-category`}
+                        className="w-full"
+                    >
+                        <SelectValue placeholder="Use provider category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {categories.map((category) => (
+                            <SelectItem
+                                key={category.id}
+                                value={String(category.id)}
+                            >
+                                {category.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <InputError message={errors.category_id} />
+            </div>
+
+            <div className="grid gap-2">
+                <Label htmlFor={`service-${service.id}-description`}>
+                    Description
+                </Label>
+                <Textarea
+                    id={`service-${service.id}-description`}
+                    name="description"
+                    defaultValue={service.description ?? ''}
+                    rows={4}
+                />
+                <InputError message={errors.description} />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                    <Label htmlFor={`service-${service.id}-duration`}>
+                        Minutes
+                    </Label>
+                    <Input
+                        id={`service-${service.id}-duration`}
+                        name="duration_minutes"
+                        type="number"
+                        min="15"
+                        step="15"
+                        defaultValue={service.duration_minutes}
+                        required
+                    />
+                    <InputError message={errors.duration_minutes} />
+                </div>
+
+                <div className="grid gap-2">
+                    <Label htmlFor={`service-${service.id}-price`}>
+                        In-person price ETB
+                    </Label>
+                    <Input
+                        id={`service-${service.id}-price`}
+                        name="price_amount"
+                        type="number"
+                        min="1"
+                        defaultValue={service.price_amount}
+                        required
+                    />
+                    <InputError message={errors.price_amount} />
+                </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                    <Label htmlFor={`service-${service.id}-status`}>
+                        Status
+                    </Label>
+                    <Select name="status" defaultValue={service.status}>
+                        <SelectTrigger
+                            id={`service-${service.id}-status`}
+                            className="w-full"
+                        >
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <InputError message={errors.status} />
+                </div>
+
+                <div className="grid gap-2">
+                    <Label htmlFor={`service-${service.id}-sort-order`}>
+                        Sort order
+                    </Label>
+                    <Input
+                        id={`service-${service.id}-sort-order`}
+                        name="sort_order"
+                        type="number"
+                        min="0"
+                        defaultValue={service.sort_order}
+                    />
+                    <InputError message={errors.sort_order} />
+                </div>
             </div>
         </>
     );
@@ -551,8 +944,8 @@ function Metric({
     value: string;
 }) {
     return (
-        <div className="border-border/70 rounded-lg border p-4">
-            <div className="text-muted-foreground flex items-center gap-2 text-sm">
+        <div className="rounded-lg border border-border/70 p-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Icon className="size-4" />
                 {label}
             </div>
@@ -565,7 +958,7 @@ function Metric({
 
 function EmptyState({ label }: { label: string }) {
     return (
-        <div className="border-border/70 text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm">
+        <div className="rounded-lg border border-dashed border-border/70 p-6 text-center text-sm text-muted-foreground">
             {label}
         </div>
     );

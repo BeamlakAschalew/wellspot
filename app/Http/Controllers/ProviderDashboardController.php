@@ -28,7 +28,7 @@ class ProviderDashboardController extends Controller
 
         /** @var Provider $provider */
         $provider = Provider::query()
-            ->with(['category', 'subscription'])
+            ->with('category')
             ->firstOrCreate(
                 ['user_id' => $user->id],
                 [
@@ -43,7 +43,7 @@ class ProviderDashboardController extends Controller
 
         $services = $provider->services()
             ->latest()
-            ->get(['id', 'name', 'description', 'duration_minutes', 'price_amount', 'currency', 'status']);
+            ->get(['id', 'category_id', 'name', 'description', 'duration_minutes', 'price_amount', 'currency', 'status', 'sort_order']);
 
         $recentBookings = $provider->bookings()
             ->with('service:id,name')
@@ -74,22 +74,21 @@ class ProviderDashboardController extends Controller
                 'comment' => $review->comment,
             ]);
 
-        $completedBookings = $provider->bookings()->where('status', 'completed');
-
         return Inertia::render('dashboard', [
             'provider' => [
                 'id' => $provider->id,
                 'name' => $provider->name,
                 'headline' => $provider->headline,
+                'description' => $provider->description,
                 'status' => $provider->status,
+                'category_id' => $provider->category_id,
                 'address' => $provider->address,
                 'neighborhood' => $provider->neighborhood,
+                'phone' => $provider->phone,
+                'email' => $provider->email,
+                'latitude' => $provider->latitude,
+                'longitude' => $provider->longitude,
                 'category' => $provider->category?->name,
-                'subscription' => $provider->subscription ? [
-                    'plan' => $provider->subscription->plan,
-                    'status' => $provider->subscription->status,
-                    'renews_at' => $provider->subscription->renews_at?->toFormattedDateString(),
-                ] : null,
             ],
             'categories' => Category::query()
                 ->orderBy('sort_order')
@@ -100,21 +99,21 @@ class ProviderDashboardController extends Controller
                 ]),
             'services' => $services->map(fn ($service): array => [
                 'id' => $service->id,
+                'category_id' => $service->category_id,
                 'name' => $service->name,
                 'description' => $service->description,
                 'duration_minutes' => $service->duration_minutes,
                 'price_amount' => $service->price_amount,
                 'currency' => $service->currency,
                 'status' => $service->status,
+                'sort_order' => $service->sort_order,
             ]),
             'bookings' => $recentBookings,
             'reviews' => $latestReviews,
             'stats' => [
                 'services' => $services->count(),
                 'pending_bookings' => $provider->bookings()->where('status', 'pending')->count(),
-                'monthly_revenue' => (clone $completedBookings)
-                    ->where('starts_at', '>=', now()->startOfMonth())
-                    ->sum('total_amount'),
+                'completed_bookings' => $provider->bookings()->where('status', 'completed')->count(),
                 'average_rating' => round((float) $provider->reviews()->where('is_published', true)->avg('rating'), 1),
             ],
         ]);

@@ -3,7 +3,6 @@
 use App\Models\Booking;
 use App\Models\Category;
 use App\Models\Provider;
-use App\Models\ProviderSubscription;
 use App\Models\Review;
 use App\Models\Service;
 use App\Models\User;
@@ -33,7 +32,7 @@ test('authenticated users get a draft provider dashboard scaffold', function () 
     expect($user->providers()->count())->toBe(1);
 });
 
-test('provider dashboard includes service booking review and subscription summaries', function () {
+test('provider dashboard includes service booking and review summaries', function () {
     $category = Category::factory()->create(['name' => 'Yoga & Mindfulness']);
     $owner = User::factory()->create();
     $provider = Provider::factory()
@@ -61,11 +60,6 @@ test('provider dashboard includes service booking review and subscription summar
         ->for($owner)
         ->for($provider)
         ->create(['rating' => 5, 'title' => 'Great care']);
-    ProviderSubscription::factory()
-        ->for($provider)
-        ->active()
-        ->create(['plan' => 'growth']);
-
     $response = $this->actingAs($owner)->get(route('provider.dashboard'));
 
     $response
@@ -73,10 +67,9 @@ test('provider dashboard includes service booking review and subscription summar
         ->assertInertia(fn (Assert $page) => $page
             ->component('dashboard')
             ->where('provider.name', 'Bole Balance Studio')
-            ->where('provider.subscription.plan', 'growth')
             ->where('stats.services', 1)
             ->where('stats.pending_bookings', 1)
-            ->where('stats.monthly_revenue', 1200)
+            ->where('stats.completed_bookings', 1)
             ->where('stats.average_rating', 5)
             ->where('services.0.name', 'Guided Breathwork')
             ->where('bookings.0.customer_name', 'Aster Tesfaye')
