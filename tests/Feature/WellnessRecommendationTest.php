@@ -151,6 +151,8 @@ it('ranks matching providers by category, services, keywords, and reviews', func
         ->assertJson(fn (AssertableJson $json) => $json
             ->has('summary')
             ->has('recommendations', 2)
+            ->where('recommendations.0.display.provider_name', 'Calm Recovery Studio')
+            ->where('recommendations.0.display.services.0', 'Deep Tissue Massage')
             ->where('recommendations.0.provider.name', 'Calm Recovery Studio')
             ->where('recommendations.1.provider.name', 'Simple Spa')
             ->etc()

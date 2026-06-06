@@ -187,11 +187,37 @@ class WellnessProviderRanker
             $reasons[] = 'Has active wellness services available';
         }
 
+        $services = $provider->services
+            ->take(3)
+            ->map(fn (Service $service): array => [
+                'id' => $service->id,
+                'name' => $service->name,
+                'description' => $service->description,
+                'duration_minutes' => $service->duration_minutes,
+                'price_amount' => $service->price_amount,
+                'currency' => $service->currency,
+                'category' => $service->category ? [
+                    'id' => $service->category->id,
+                    'name' => $service->category->name,
+                    'slug' => $service->category->slug,
+                ] : null,
+            ])
+            ->values()
+            ->all();
+
         return [
             'score' => $score,
             'reasons' => array_values(array_unique($reasons)),
             'average_rating' => $averageRating,
             'active_services_count' => (int) $provider->active_services_count,
+            'display' => [
+                'provider_name' => $provider->name,
+                'place' => $this->place($provider),
+                'category' => $provider->category?->name,
+                'services' => collect($services)->pluck('name')->all(),
+                'starting_price' => $this->startingPrice($services),
+                'distance' => $provider->distance ?? null,
+            ],
             'provider' => [
                 'id' => $provider->id,
                 'name' => $provider->name,
@@ -210,24 +236,36 @@ class WellnessProviderRanker
                 'distance' => $provider->distance ?? null,
                 'is_featured' => $provider->is_featured,
             ],
-            'services' => $provider->services
-                ->take(3)
-                ->map(fn (Service $service): array => [
-                    'id' => $service->id,
-                    'name' => $service->name,
-                    'description' => $service->description,
-                    'duration_minutes' => $service->duration_minutes,
-                    'price_amount' => $service->price_amount,
-                    'currency' => $service->currency,
-                    'category' => $service->category ? [
-                        'id' => $service->category->id,
-                        'name' => $service->category->name,
-                        'slug' => $service->category->slug,
-                    ] : null,
-                ])
-                ->values()
-                ->all(),
+            'services' => $services,
         ];
+    }
+
+    private function place(Provider $provider): string
+    {
+        return collect([
+            $provider->neighborhood,
+            $provider->address,
+        ])
+            ->filter()
+            ->unique()
+            ->implode(', ');
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $services
+     */
+    private function startingPrice(array $services): ?string
+    {
+        $service = collect($services)
+            ->filter(fn (array $service): bool => isset($service['price_amount'], $service['currency']))
+            ->sortBy('price_amount')
+            ->first();
+
+        if ($service === null) {
+            return null;
+        }
+
+        return "{$service['currency']} {$service['price_amount']}";
     }
 
     /**

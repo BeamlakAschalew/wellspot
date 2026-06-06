@@ -1,9 +1,7 @@
 import { Head } from '@inertiajs/react';
-import { QuizFooter } from '@/components/quiz/footer';
-import { QuizHeader } from '@/components/quiz/header';
 import { QuizMainContent } from '@/components/quiz/main-content';
-import { QuizSidebar } from '@/components/quiz/sidebar';
-
+import WellSpotFooter from '@/components/user/footerSmall';
+import { Header } from '@/components/user/header';
 export default function Quiz() {
     return (
         <>
@@ -25,10 +23,10 @@ export default function Quiz() {
             </Head>
 
             <div className="wellspot-quiz flex min-h-screen flex-col bg-background font-body-md text-on-background">
-                <QuizHeader />
-                <QuizSidebar />
+               
+                <Header/>
                 <QuizMainContent />
-                <QuizFooter />
+               <WellSpotFooter/>
             </div>
         </>
     );
