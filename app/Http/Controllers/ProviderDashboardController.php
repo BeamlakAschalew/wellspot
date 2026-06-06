@@ -91,7 +91,7 @@ class ProviderDashboardController extends Controller
                 'category' => $provider->category?->name,
             ],
             'categories' => Category::query()
-                ->orderBy('sort_order')
+                ->orderBy('sort_order', 'asc')
                 ->get(['id', 'name'])
                 ->map(fn (Category $category): array => [
                     'id' => $category->id,

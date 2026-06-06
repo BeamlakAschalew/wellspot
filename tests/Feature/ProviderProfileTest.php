@@ -3,6 +3,7 @@
 use App\Models\Category;
 use App\Models\Provider;
 use App\Models\User;
+use Inertia\Support\SessionKey;
 
 test('providers can update and publish their profile', function () {
     $category = Category::factory()->create(['name' => 'Spa & Massage']);
@@ -29,6 +30,12 @@ test('providers can update and publish their profile', function () {
     ]);
 
     $response->assertRedirect(route('provider.dashboard'));
+    $response->assertSessionHas(SessionKey::FLASH_DATA, [
+        'toast' => [
+            'type' => 'success',
+            'message' => 'Provider profile saved.',
+        ],
+    ]);
 
     expect($provider->refresh())
         ->category_id->toBe($newCategory->id)

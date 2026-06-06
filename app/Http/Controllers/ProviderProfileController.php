@@ -6,6 +6,7 @@ use App\Http\Requests\ProviderProfileRequest;
 use App\Models\Provider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class ProviderProfileController extends Controller
 {
@@ -27,6 +28,11 @@ class ProviderProfileController extends Controller
                 : null,
         ]);
         $provider->save();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Provider profile saved.'),
+        ]);
 
         return to_route('provider.dashboard');
     }

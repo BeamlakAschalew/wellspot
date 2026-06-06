@@ -7,6 +7,7 @@ use App\Models\Provider;
 use App\Models\Service;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class ProviderServiceController extends Controller
 {
@@ -21,6 +22,11 @@ class ProviderServiceController extends Controller
             'slug' => $this->uniqueSlug($provider, $slug),
             'currency' => 'ETB',
             'status' => $validated['status'] ?? 'active',
+        ]);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Service created.'),
         ]);
 
         return to_route('provider.dashboard');
@@ -41,6 +47,11 @@ class ProviderServiceController extends Controller
             'status' => $validated['status'] ?? $service->status,
         ]);
 
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Service updated.'),
+        ]);
+
         return to_route('provider.dashboard');
     }
 
@@ -50,6 +61,11 @@ class ProviderServiceController extends Controller
         abort_unless($service->provider_id === $provider->id, 404);
 
         $service->delete();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Service deleted.'),
+        ]);
 
         return to_route('provider.dashboard');
     }

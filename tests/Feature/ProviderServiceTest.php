@@ -4,6 +4,7 @@ use App\Models\Category;
 use App\Models\Provider;
 use App\Models\Service;
 use App\Models\User;
+use Inertia\Support\SessionKey;
 
 test('providers can add a service from the dashboard', function () {
     $category = Category::factory()->create();
@@ -21,6 +22,12 @@ test('providers can add a service from the dashboard', function () {
     ]);
 
     $response->assertRedirect(route('provider.dashboard'));
+    $response->assertSessionHas(SessionKey::FLASH_DATA, [
+        'toast' => [
+            'type' => 'success',
+            'message' => 'Service created.',
+        ],
+    ]);
 
     expect($provider->services()->where('name', 'Deep Tissue Massage')->exists())->toBeTrue();
 });
@@ -59,6 +66,12 @@ test('providers can update their own services', function () {
     ]);
 
     $response->assertRedirect(route('provider.dashboard'));
+    $response->assertSessionHas(SessionKey::FLASH_DATA, [
+        'toast' => [
+            'type' => 'success',
+            'message' => 'Service updated.',
+        ],
+    ]);
 
     expect($service->refresh())
         ->name->toBe('Recovery Massage')
@@ -105,6 +118,12 @@ test('providers can delete their own services', function () {
     $response = $this->actingAs($user)->delete(route('provider.services.destroy', $service));
 
     $response->assertRedirect(route('provider.dashboard'));
+    $response->assertSessionHas(SessionKey::FLASH_DATA, [
+        'toast' => [
+            'type' => 'success',
+            'message' => 'Service deleted.',
+        ],
+    ]);
 
     expect(Service::query()->whereKey($service->id)->exists())->toBeFalse();
 });
