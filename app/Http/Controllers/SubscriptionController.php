@@ -35,7 +35,7 @@ class SubscriptionController extends Controller
             'email' => $billingEmail,
             'first_name' => $request->user()->name,
             'last_name' => $provider->name,
-            'phone_number' => $provider->phone,
+            'phone_number' => '0912345678',
             'tx_ref' => $txRef,
             'callback_url' => $callbackUrl,
             'return_url' => $returnUrl,

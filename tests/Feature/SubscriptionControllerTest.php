@@ -55,6 +55,7 @@ test('providers can initialize a monthly Chapa subscription checkout', function 
         && $request['amount'] === 4000
         && $request['currency'] === 'ETB'
         && $request['email'] === 'provider@example.test'
+        && $request['phone_number'] === '0912345678'
         && $request['customization']['title'] === 'WellSpot'
         && mb_strlen($request['customization']['title']) <= 16
         && mb_strlen($request['customization']['description']) <= 32
