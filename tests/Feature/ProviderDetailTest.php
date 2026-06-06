@@ -47,7 +47,8 @@ test('published provider detail page shows profile and active services', functio
             ->where('provider.services.0.price_amount', 1200)
             ->missing('provider.services.1')
             ->where('provider.reviews.0.title', 'Excellent care')
-            ->missing('provider.reviews.1'));
+            ->missing('provider.reviews.1')
+            ->missing('googleMapsApiKey'));
 });
 
 test('draft provider detail page is not public', function () {

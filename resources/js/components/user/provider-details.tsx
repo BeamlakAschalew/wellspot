@@ -62,7 +62,6 @@ export type ProviderDetailData = {
 
 type ProviderDetailsProps = {
     provider: ProviderDetailData;
-    googleMapsApiKey: string | null;
 };
 
 type BookingDay = {
@@ -113,10 +112,7 @@ function getUpcomingDays(): BookingDay[] {
     return days;
 }
 
-function googleMapsEmbedUrl(
-    provider: ProviderDetailData,
-    googleMapsApiKey: string | null,
-): string | null {
+function googleMapsEmbedUrl(provider: ProviderDetailData): string | null {
     const query =
         provider.latitude && provider.longitude
             ? `${provider.latitude},${provider.longitude}`
@@ -127,10 +123,6 @@ function googleMapsEmbedUrl(
     }
 
     const encodedQuery = encodeURIComponent(query);
-
-    if (googleMapsApiKey) {
-        return `https://www.google.com/maps/embed/v1/place?key=${googleMapsApiKey}&q=${encodedQuery}`;
-    }
 
     return `https://maps.google.com/maps?q=${encodedQuery}&z=15&output=embed`;
 }
@@ -143,10 +135,7 @@ function startsAtValue(date: string | null, time: string | null): string {
     return `${date}T${time}`;
 }
 
-export default function ProviderDetails({
-    provider,
-    googleMapsApiKey,
-}: ProviderDetailsProps) {
+export default function ProviderDetails({ provider }: ProviderDetailsProps) {
     const [selectedServiceId, setSelectedServiceId] = useState(
         provider.services[0]?.id ?? null,
     );
@@ -157,7 +146,7 @@ export default function ProviderDetails({
         (service) => service.id === selectedServiceId,
     );
     const selectedDay = upcomingDays.find((day) => day.id === selectedDate);
-    const mapUrl = googleMapsEmbedUrl(provider, googleMapsApiKey);
+    const mapUrl = googleMapsEmbedUrl(provider);
     const hours = Object.entries(provider.opening_hours ?? {});
     const location =
         [provider.neighborhood, provider.address].filter(Boolean).join(' - ') ||

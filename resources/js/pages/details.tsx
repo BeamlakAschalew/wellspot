@@ -7,10 +7,9 @@ import { Head } from '@inertiajs/react';
 
 type DetailsProps = {
     provider: ProviderDetailData;
-    googleMapsApiKey: string | null;
 };
 
-export default function Details({ provider, googleMapsApiKey }: DetailsProps) {
+export default function Details({ provider }: DetailsProps) {
     return (
         <>
             <Head title={`${provider.name} | WellSpot`}>
@@ -31,10 +30,7 @@ export default function Details({ provider, googleMapsApiKey }: DetailsProps) {
             </Head>
             <div className="wellspot-home min-h-screen bg-background text-on-surface">
                 <Header />
-                <ProviderDetails
-                    googleMapsApiKey={googleMapsApiKey}
-                    provider={provider}
-                />
+                <ProviderDetails provider={provider} />
                 <Footer />
             </div>
         </>

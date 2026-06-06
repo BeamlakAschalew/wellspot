@@ -25,7 +25,7 @@ import providerTherapyImage from '@/assets/wellspot/image-04.jpg';
 import providerYogaImage from '@/assets/wellspot/image-05.jpg';
 import heroImage from '@/assets/wellspot/image-06.jpg';
 import providerSpaImage from '@/assets/wellspot/image-07.jpg';
-import { home, register } from '@/routes';
+import { explore, home, register } from '@/routes';
 import { show as showProvider } from '@/routes/providers';
 
 export type HomeFilters = {
@@ -194,7 +194,7 @@ function formatPrice(amount: number | null, currency: string) {
 }
 
 function categoryHref(filters: HomeFilters, category: string) {
-    return home.url({
+    return explore.url({
         query: compactFilters({
             ...filters,
             category: filters.category === category ? '' : category,
@@ -214,10 +214,7 @@ function HeroSection({
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
-        router.get(home.url(), compactFilters(form), {
-            preserveScroll: true,
-            replace: true,
-        });
+        router.get(explore.url(), compactFilters(form));
     }
 
     return (
@@ -346,7 +343,7 @@ function CategoriesSection({
                 {filters.category && (
                     <Link
                         className="inline-flex items-center gap-xs self-start rounded-full border border-outline-variant px-md py-sm font-label-md text-label-md text-on-surface-variant transition hover:bg-surface-container"
-                        href={home.url({
+                        href={explore.url({
                             query: compactFilters({
                                 ...filters,
                                 category: '',

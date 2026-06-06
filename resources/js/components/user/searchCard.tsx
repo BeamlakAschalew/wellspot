@@ -1,84 +1,153 @@
-import React from 'react';
+import { Link } from '@inertiajs/react';
+import {
+    ArrowUpRight,
+    Clock3,
+    MapPin,
+    ShieldCheck,
+    Sparkles,
+    Star,
+} from 'lucide-react';
+import { show as showProvider } from '@/routes/providers';
 
-// Define the type interface for the card properties
-interface SearchCardProps {
+export type SearchProviderService = {
     name: string;
-    location: string;
-    rating: number;
-    imageUrl: string;
-    imageAlt?: string;
-    onViewDetails?: () => void;
+    price_amount: number | null;
+    currency: string | null;
+    duration_minutes: number | null;
+};
+
+export type SearchProvider = {
+    id: number;
+    name: string;
+    slug: string;
+    headline: string | null;
+    description: string | null;
+    category: {
+        name: string;
+        slug: string;
+    } | null;
+    services: SearchProviderService[];
+    starting_price: number | null;
+    currency: string;
+    neighborhood: string | null;
+    address: string | null;
+    rating: number | null;
+    reviews_count: number;
+    is_featured: boolean;
+};
+
+type SearchCardProps = {
+    provider: SearchProvider;
+};
+
+function formatPrice(amount: number | null, currency: string): string {
+    if (amount === null) {
+        return 'Ask';
+    }
+
+    return new Intl.NumberFormat('en', {
+        maximumFractionDigits: 0,
+        style: 'currency',
+        currency,
+    }).format(amount);
 }
 
-export default function SearchCard({
-    name,
-    location,
-    rating,
-    imageUrl,
-    imageAlt = 'Spa and wellness facility treatment room',
-    onViewDetails,
-}: SearchCardProps) {
+export default function SearchCard({ provider }: SearchCardProps) {
+    const location = provider.neighborhood ?? provider.address ?? 'Addis Ababa';
+    const primaryService = provider.services[0];
+    const remainingServices = provider.services.slice(1, 4);
+
     return (
-        <div className="group w-full max-w-sm overflow-hidden rounded-xl border border-zinc-200 bg-white transition-all duration-300 hover:border-zinc-800 hover:shadow-lg">
-            {/* Card Media Header Frame */}
-            <div className="relative h-48 overflow-hidden bg-zinc-100">
-                <img
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    src={imageUrl}
-                    alt={imageAlt}
-                />
+        <Link
+            className="group grid min-h-[260px] overflow-hidden rounded-lg border border-outline-variant/40 bg-surface shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none md:grid-cols-[minmax(0,1fr)_300px]"
+            href={showProvider.url(provider.id)}
+            prefetch
+        >
+            <div className="flex min-w-0 flex-col justify-between gap-lg p-lg">
+                <div className="space-y-md">
+                    <div className="flex flex-wrap items-center gap-sm">
+                        <span className="inline-flex items-center gap-xs rounded-full bg-primary-fixed px-sm py-xs font-label-sm text-label-sm text-on-primary-fixed">
+                            <Sparkles className="h-3.5 w-3.5" />
+                            {provider.category?.name ?? 'Wellness'}
+                        </span>
+                        {provider.is_featured && (
+                            <span className="inline-flex items-center gap-xs rounded-full bg-secondary-fixed px-sm py-xs font-label-sm text-label-sm text-on-secondary-fixed">
+                                <ShieldCheck className="h-3.5 w-3.5" />
+                                Featured
+                            </span>
+                        )}
+                    </div>
 
-                {/* Dynamic Badge Overlays */}
-                <div className="absolute top-3 right-3 flex items-center gap-1 rounded-lg border border-zinc-200/20 bg-white/90 px-2.5 py-1 shadow-sm backdrop-blur-md">
-                    <span className="text-xs leading-none text-amber-500">
-                        ★
-                    </span>
-                    <span className="text-xs leading-none font-bold text-zinc-800">
-                        {rating.toFixed(1)}
-                    </span>
-                </div>
-            </div>
+                    <div>
+                        <h2 className="font-headline-lg text-headline-lg text-on-surface transition-colors group-hover:text-primary">
+                            {provider.name}
+                        </h2>
+                        <p className="mt-sm line-clamp-2 font-body-md text-body-md text-on-surface-variant">
+                            {provider.headline ??
+                                provider.description ??
+                                primaryService?.name ??
+                                'Wellness provider'}
+                        </p>
+                    </div>
 
-            {/* Card Content & Operations Block */}
-            <div className="space-y-4 p-4">
-                <div>
-                    <h3 className="truncate text-lg font-bold tracking-tight text-zinc-900">
-                        {name}
-                    </h3>
-                    <div className="mt-1 flex items-center gap-1.5 text-zinc-500">
-                        {/* Location pin indicator */}
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.8}
-                            stroke="currentColor"
-                            className="h-4 w-4 text-zinc-400"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
-                            />
-                        </svg>
-                        <span className="text-xs font-medium">{location}</span>
+                    <div className="flex flex-wrap items-center gap-md text-on-surface-variant">
+                        <span className="inline-flex items-center gap-xs font-label-md text-label-md">
+                            <MapPin className="h-4 w-4 text-primary" />
+                            {location}
+                        </span>
+                        <span className="inline-flex items-center gap-xs font-label-md text-label-md">
+                            <Star className="h-4 w-4 fill-[#FFB800] text-[#FFB800]" />
+                            {provider.rating ?? 'New'} ({provider.reviews_count})
+                        </span>
+                        {primaryService?.duration_minutes && (
+                            <span className="inline-flex items-center gap-xs font-label-md text-label-md">
+                                <Clock3 className="h-4 w-4 text-primary" />
+                                From {primaryService.duration_minutes} min
+                            </span>
+                        )}
                     </div>
                 </div>
 
-                {/* Dynamic CTA button that maps to parent routing handlers */}
-                <button
-                    onClick={onViewDetails}
-                    type="button"
-                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-2.5 text-xs font-semibold text-zinc-800 transition-all group-hover:border-zinc-900 group-hover:bg-zinc-900 group-hover:text-white active:scale-[0.98]"
-                >
-                    View Details
-                </button>
+                <div className="flex flex-col gap-md border-t border-outline-variant/30 pt-md sm:flex-row sm:items-end sm:justify-between">
+                    <div className="min-w-0">
+                        {primaryService && (
+                            <p className="truncate font-label-md text-label-md text-on-surface">
+                                {primaryService.name}
+                            </p>
+                        )}
+                        {remainingServices.length > 0 && (
+                            <p className="mt-xs line-clamp-1 font-body-sm text-body-sm text-outline">
+                                Also: {remainingServices.map((service) => service.name).join(', ')}
+                            </p>
+                        )}
+                    </div>
+                    <div className="flex shrink-0 items-center justify-between gap-md sm:justify-end">
+                        <span className="font-headline-sm text-headline-sm text-primary">
+                            {formatPrice(provider.starting_price, provider.currency)}
+                        </span>
+                        <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-primary text-on-primary transition-transform group-hover:translate-x-1">
+                            <ArrowUpRight className="h-5 w-5" />
+                        </span>
+                    </div>
+                </div>
             </div>
-        </div>
+
+            <div className="relative hidden bg-surface-container-low md:block">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(176,240,214,0.9),transparent_36%),linear-gradient(135deg,rgba(0,53,39,0.92),rgba(0,101,145,0.78))]" />
+                <div className="relative flex h-full flex-col justify-between p-lg text-on-primary">
+                    <div className="self-end rounded-full bg-surface/95 px-sm py-xs font-label-sm text-label-sm text-on-surface shadow-sm">
+                        {provider.reviews_count > 0 ? 'Trusted by clients' : 'New listing'}
+                    </div>
+                    <div>
+                        <p className="mb-sm font-label-sm text-label-sm uppercase text-on-primary/70">
+                            Next step
+                        </p>
+                        <p className="max-w-[220px] font-headline-sm text-headline-sm">
+                            View services, reviews, hours, and booking options.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </Link>
     );
 }

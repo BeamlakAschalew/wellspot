@@ -36,7 +36,6 @@ class ProviderDetailController extends Controller
 
         return Inertia::render('details', [
             'provider' => $this->providerPayload($provider),
-            'googleMapsApiKey' => config('services.google_maps.key'),
         ]);
     }
 

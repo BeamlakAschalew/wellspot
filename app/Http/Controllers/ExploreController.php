@@ -8,7 +8,7 @@ use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class HomeController extends Controller
+class ExploreController extends Controller
 {
     public function __invoke(Request $request, ProviderSearch $providerSearch): Response
     {
@@ -22,15 +22,14 @@ class HomeController extends Controller
         $location = $validated['location'] ?? null;
         $category = $validated['category'] ?? null;
 
-        return Inertia::render('welcome', [
+        return Inertia::render('searchResult', [
             'filters' => [
                 'search' => $search ?? '',
                 'location' => $location ?? '',
                 'category' => $category ?? '',
             ],
             'categories' => $providerSearch->categories(),
-            'providers' => $providerSearch->providers($search, $location, $category),
-            'topRatedProviders' => $providerSearch->topRated(),
+            'providers' => $providerSearch->providers($search, $location, $category, 48),
         ]);
     }
 }
