@@ -1,12 +1,13 @@
 import { Head } from '@inertiajs/react';
 import { Footer } from '@/components/user/footer';
 import { Header } from '@/components/user/header';
-import { MainContent } from '@/components/user/main-content';
 import type {
     HomeCategory,
     HomeFilters,
     HomeProvider,
 } from '@/components/user/main-content';
+import { MainContent } from '@/components/user/main-content';
+import { useTranslation } from '@/lib/i18n';
 
 type WelcomeProps = {
     filters: HomeFilters;
@@ -21,9 +22,11 @@ export default function Welcome({
     providers,
     topRatedProviders,
 }: WelcomeProps) {
+    const { t } = useTranslation();
+
     return (
         <>
-            <Head title="WellSpot | Find Your Balance">
+            <Head title={t('home.metaTitle')}>
                 <link href="https://fonts.googleapis.com" rel="preconnect" />
                 <link
                     crossOrigin="anonymous"

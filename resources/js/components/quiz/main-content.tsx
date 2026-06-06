@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import sleepImage from '@/assets/quiz/image-02.jpg';
+import { useTranslation } from '@/lib/i18n';
 import { questions as wellnessQuestions } from '@/routes/api/wellness';
 
 const optionIcons = [
@@ -53,6 +54,7 @@ function MaterialIcon({
 }
 
 export function QuizMainContent() {
+    const { t } = useTranslation();
     const [feeling, setFeeling] = useState('');
     const [aiQuestions, setAiQuestions] = useState<AiQuestion[]>([]);
     const [openingMessage, setOpeningMessage] = useState<string | null>(null);
@@ -229,7 +231,7 @@ export function QuizMainContent() {
 
                     <div className="relative h-48 w-full overflow-hidden">
                         <img
-                            alt="A serene bedroom at dusk with soft ambient lighting and plush bedding."
+                            alt={t('quiz.question.imageAlt')}
                             className="h-full w-full object-cover"
                             src={sleepImage}
                         />
@@ -344,7 +346,7 @@ export function QuizMainContent() {
                             <MaterialIcon className="text-[18px]">
                                 arrow_back
                             </MaterialIcon>
-                            Previous
+                            {t('quiz.previous')}
                         </button>
                         <button
                             className="flex items-center gap-xs rounded-xl bg-primary-container px-xl py-md font-label-md text-label-md text-on-primary shadow-sm transition-all hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
@@ -372,13 +374,13 @@ export function QuizMainContent() {
                         <MaterialIcon className="text-[16px]">
                             lock
                         </MaterialIcon>
-                        Your data is secure
+                        {t('quiz.secure')}
                     </div>
                     <div className="flex items-center gap-xs text-label-sm">
                         <MaterialIcon className="text-[16px]">
                             history
                         </MaterialIcon>
-                        Takes ~5 minutes
+                        {t('quiz.duration')}
                     </div>
                 </div>
             </div>

@@ -23,6 +23,8 @@ import providerTherapyImage from '@/assets/wellspot/image-04.jpg';
 import providerYogaImage from '@/assets/wellspot/image-05.jpg';
 import heroImage from '@/assets/wellspot/image-06.jpg';
 import providerSpaImage from '@/assets/wellspot/image-07.jpg';
+import type { TranslationKey } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
 import { explore, home, register } from '@/routes';
 import { show as showProvider } from '@/routes/providers';
 
@@ -133,30 +135,6 @@ const providerImages = [
     providerSpaImage,
 ];
 
-const steps = [
-    {
-        icon: Search,
-        title: '1. Search',
-        body: 'Filter by service, location, or provider to find your perfect match.',
-        hoverClass: 'group-hover:bg-primary-fixed',
-        iconClass: 'text-primary',
-    },
-    {
-        icon: Calendar,
-        title: '2. Book',
-        body: 'Check availability and send your booking request instantly.',
-        hoverClass: 'group-hover:bg-secondary-fixed',
-        iconClass: 'text-secondary',
-    },
-    {
-        icon: Smile,
-        title: '3. Relax',
-        body: 'Arrive at your appointment and let the professionals handle the rest.',
-        hoverClass: 'group-hover:bg-tertiary-fixed',
-        iconClass: 'text-tertiary',
-    },
-];
-
 // const testimonials = [
 //     {
 //         image: testimonialSarahImage,
@@ -180,12 +158,17 @@ function compactFilters(filters: HomeFilters): Partial<HomeFilters> {
     ) as Partial<HomeFilters>;
 }
 
-function formatPrice(amount: number | null, currency: string) {
+function formatPrice(
+    amount: number | null,
+    currency: string,
+    locale: string,
+    t: (key: TranslationKey) => string,
+) {
     if (amount === null) {
-        return 'Ask';
+        return t('home.price.ask');
     }
 
-    return new Intl.NumberFormat('en', {
+    return new Intl.NumberFormat(locale === 'am' ? 'am-ET' : 'en', {
         maximumFractionDigits: 0,
         style: 'currency',
         currency,
@@ -208,6 +191,7 @@ function HeroSection({
     categories: HomeCategory[];
     filters: HomeFilters;
 }) {
+    const { t } = useTranslation();
     const [form, setForm] = useState<HomeFilters>(filters);
 
     function submit(event: FormEvent<HTMLFormElement>) {
@@ -223,7 +207,7 @@ function HeroSection({
         >
             <div className="absolute inset-0 z-0">
                 <img
-                    alt="A serene wellness studio interior with natural sunlight, oak flooring, and lush indoor plants."
+                    alt={t('home.hero.imageAlt')}
                     className="h-full w-full object-cover"
                     src={heroImage}
                 />
@@ -247,7 +231,7 @@ function HeroSection({
                         <Search className="mr-sm h-5 w-5 shrink-0 text-primary" />
                         <span className="min-w-0 flex-1 text-left">
                             <span className="block font-label-sm text-label-sm text-on-surface-variant uppercase">
-                                Service
+                                {t('home.search.service')}
                             </span>
                             <input
                                 className="w-full border-none bg-transparent p-0 font-body-md text-body-md placeholder:text-outline focus:ring-0 focus:outline-none"
@@ -257,7 +241,9 @@ function HeroSection({
                                         search: event.target.value,
                                     }))
                                 }
-                                placeholder="Massage, yoga, therapy..."
+                                placeholder={t(
+                                    'home.search.servicePlaceholder',
+                                )}
                                 type="search"
                                 value={form.search}
                             />
@@ -268,7 +254,7 @@ function HeroSection({
                         <MapPin className="mr-sm h-5 w-5 shrink-0 text-primary" />
                         <span className="min-w-0 flex-1 text-left">
                             <span className="block font-label-sm text-label-sm text-on-surface-variant uppercase">
-                                Location
+                                {t('home.search.location')}
                             </span>
                             <input
                                 className="w-full border-none bg-transparent p-0 font-body-md text-body-md placeholder:text-outline focus:ring-0 focus:outline-none"
@@ -278,7 +264,9 @@ function HeroSection({
                                         location: event.target.value,
                                     }))
                                 }
-                                placeholder="Bole, Kazanchis..."
+                                placeholder={t(
+                                    'home.search.locationPlaceholder',
+                                )}
                                 type="search"
                                 value={form.location}
                             />
@@ -296,7 +284,9 @@ function HeroSection({
                         }
                         value={form.category}
                     >
-                        <option value="">All categories</option>
+                        <option value="">
+                            {t('home.search.allCategories')}
+                        </option>
                         {categories.map((category) => (
                             <option key={category.id} value={category.slug}>
                                 {category.name}
@@ -324,6 +314,8 @@ function CategoriesSection({
     categories: HomeCategory[];
     filters: HomeFilters;
 }) {
+    const { t } = useTranslation();
+
     return (
         <section
             className="mx-auto max-w-container-max px-margin-mobile py-2xl"
@@ -332,11 +324,10 @@ function CategoriesSection({
             <div className="mb-xl flex flex-col justify-between gap-md sm:flex-row sm:items-end">
                 <div>
                     <h2 className="font-headline-lg text-headline-lg text-primary">
-                        Explore Categories
+                        {t('home.categories.title')}
                     </h2>
                     <p className="mt-xs font-body-md text-body-md text-on-surface-variant">
-                        Browse live categories with published providers ready to
-                        book.
+                        {t('home.categories.body')}
                     </p>
                 </div>
                 {filters.category && (
@@ -351,7 +342,7 @@ function CategoriesSection({
                         preserveScroll
                     >
                         <X className="h-4 w-4" />
-                        Clear category
+                        {t('home.categories.clear')}
                     </Link>
                 )}
             </div>
@@ -388,7 +379,9 @@ function CategoriesSection({
                                 {category.name}
                             </span>
                             <span className="mt-xs font-label-sm text-label-sm text-outline">
-                                {category.providers_count} providers
+                                {t('home.categories.providers', {
+                                    count: category.providers_count,
+                                })}
                             </span>
                         </Link>
                     );
@@ -405,6 +398,7 @@ function ProviderCard({
     provider: HomeProvider;
     image: string;
 }) {
+    const { locale, t } = useTranslation();
     const serviceNames = provider.services
         .map((service) => service.name)
         .join(', ');
@@ -441,12 +435,12 @@ function ProviderCard({
                         className="h-[18px] w-[18px] fill-[#FFB800] text-[#FFB800]"
                     />
                     <span className="font-label-sm text-label-sm text-on-surface">
-                        {provider.rating ?? 'New'}
+                        {provider.rating ?? t('home.provider.new')}
                     </span>
                 </div>
                 {provider.is_featured && (
                     <div className="absolute top-md left-md rounded-lg bg-primary px-sm py-xs font-label-sm text-label-sm text-on-primary">
-                        Featured
+                        {t('home.provider.featured')}
                     </div>
                 )}
             </div>
@@ -455,7 +449,8 @@ function ProviderCard({
                     <div className="mb-xs flex items-start justify-between gap-sm">
                         <div className="min-w-0">
                             <p className="mb-xs font-label-sm text-label-sm text-secondary uppercase">
-                                {provider.category?.name ?? 'Wellness'}
+                                {provider.category?.name ??
+                                    t('home.provider.wellness')}
                             </p>
                             <h3 className="font-headline-sm text-headline-sm text-pretty text-on-surface">
                                 {provider.name}
@@ -465,6 +460,8 @@ function ProviderCard({
                             {formatPrice(
                                 provider.starting_price,
                                 provider.currency,
+                                locale,
+                                t,
                             )}
                         </span>
                     </div>
@@ -483,7 +480,9 @@ function ProviderCard({
                         <span className="truncate">{location}</span>
                     </span>
                     <span className="shrink-0 font-label-sm text-label-sm text-outline">
-                        {provider.reviews_count} reviews
+                        {t('home.provider.reviews', {
+                            count: provider.reviews_count,
+                        })}
                     </span>
                 </div>
             </div>
@@ -500,13 +499,14 @@ function ProvidersSection({
     providers: HomeProvider[];
     topRatedProviders: HomeProvider[];
 }) {
+    const { t } = useTranslation();
     const hasActiveFilters = Object.values(filters).some(
         (value) => value.trim() !== '',
     );
     const visibleProviders = hasActiveFilters ? providers : topRatedProviders;
     const heading = hasActiveFilters
-        ? 'Matching Providers'
-        : 'Top Rated Providers';
+        ? t('home.providers.matching')
+        : t('home.providers.topRated');
 
     return (
         <section className="bg-surface-container-low py-2xl" id="providers">
@@ -518,8 +518,14 @@ function ProvidersSection({
                         </h2>
                         <p className="font-body-md text-body-md text-on-surface-variant">
                             {hasActiveFilters
-                                ? `${providers.length} published provider${providers.length === 1 ? '' : 's'} match your search.`
-                                : 'Published providers ranked by real customer reviews.'}
+                                ? t('home.providers.matchCount', {
+                                      count: providers.length,
+                                      providerLabel:
+                                          providers.length === 1
+                                              ? 'provider'
+                                              : 'providers',
+                                  })
+                                : t('home.providers.rankBody')}
                         </p>
                     </div>
                     {hasActiveFilters && (
@@ -528,7 +534,7 @@ function ProvidersSection({
                             href={home.url()}
                         >
                             <X className="h-4 w-4" />
-                            Clear search
+                            {t('home.providers.clearSearch')}
                         </Link>
                     )}
                 </div>
@@ -551,11 +557,10 @@ function ProvidersSection({
                     <div className="flex min-h-64 flex-col items-center justify-center rounded-lg border border-dashed border-outline-variant bg-surface px-lg py-xl text-center">
                         <Building2 className="mb-md h-10 w-10 text-outline" />
                         <h3 className="font-headline-sm text-headline-sm text-on-surface">
-                            No providers found
+                            {t('home.providers.noneTitle')}
                         </h3>
                         <p className="mt-sm max-w-md font-body-md text-body-md text-on-surface-variant">
-                            Try a broader service, another neighborhood, or
-                            clear the selected category.
+                            {t('home.providers.noneBody')}
                         </p>
                     </div>
                 )}
@@ -565,6 +570,31 @@ function ProvidersSection({
 }
 
 function HowItWorksSection() {
+    const { t } = useTranslation();
+    const steps = [
+        {
+            icon: Search,
+            title: t('home.step.search.title'),
+            body: t('home.step.search.body'),
+            hoverClass: 'group-hover:bg-primary-fixed',
+            iconClass: 'text-primary',
+        },
+        {
+            icon: Calendar,
+            title: t('home.step.book.title'),
+            body: t('home.step.book.body'),
+            hoverClass: 'group-hover:bg-secondary-fixed',
+            iconClass: 'text-secondary',
+        },
+        {
+            icon: Smile,
+            title: t('home.step.relax.title'),
+            body: t('home.step.relax.body'),
+            hoverClass: 'group-hover:bg-tertiary-fixed',
+            iconClass: 'text-tertiary',
+        },
+    ];
+
     return (
         <section
             className="mx-auto max-w-container-max px-margin-mobile py-2xl"
@@ -572,7 +602,7 @@ function HowItWorksSection() {
         >
             <div className="mb-2xl text-center">
                 <h2 className="mb-md font-headline-lg text-headline-lg text-primary">
-                    How WellSpot Works
+                    {t('home.how.title')}
                 </h2>
                 <p className="mx-auto text-on-surface-variant">
                     Wellness made simple. Find and book your favorite services
@@ -655,6 +685,8 @@ function HowItWorksSection() {
 // }
 
 function CtaSection() {
+    const { t } = useTranslation();
+
     return (
         <section className="px-margin-mobile py-2xl text-center">
             <div className="mx-auto">
@@ -662,22 +694,21 @@ function CtaSection() {
                     Ready to feel better?
                 </h2>
                 <p className="mb-xl font-body-lg text-body-lg text-on-surface-variant">
-                    Start with a search, or create a provider account and list
-                    your services.
+                    {t('home.cta.body')}
                 </p>
                 <div className="flex flex-col items-center justify-center gap-md sm:flex-row">
                     <a
                         className="inline-flex w-full items-center justify-center gap-xs rounded-full bg-primary px-2xl py-md font-label-md text-label-md text-on-primary shadow-lg transition-all hover:opacity-90 active:scale-95 sm:w-auto"
                         href="#providers"
                     >
-                        Find a Provider
+                        {t('home.cta.findProvider')}
                         <ArrowRight className="h-4 w-4" />
                     </a>
                     <Link
                         className="inline-flex w-full items-center justify-center gap-xs rounded-full border border-outline px-2xl py-md font-label-md text-label-md transition-all hover:bg-surface-container active:scale-95 sm:w-auto"
                         href={register.url()}
                     >
-                        List Your Service
+                        {t('home.cta.listService')}
                         <Sparkles className="h-4 w-4" />
                     </Link>
                 </div>

@@ -2,10 +2,13 @@ import { Head } from '@inertiajs/react';
 import { QuizMainContent } from '@/components/quiz/main-content';
 import WellSpotFooter from '@/components/user/footerSmall';
 import { Header } from '@/components/user/header';
+import { useTranslation } from '@/lib/i18n';
 export default function Quiz() {
+    const { t } = useTranslation();
+
     return (
         <>
-            <Head title="AI Wellness Quiz - WellSpot">
+            <Head title={t('quiz.metaTitle')}>
                 <link href="https://fonts.googleapis.com" rel="preconnect" />
                 <link
                     crossOrigin="anonymous"
@@ -23,10 +26,9 @@ export default function Quiz() {
             </Head>
 
             <div className="wellspot-quiz flex min-h-screen flex-col bg-background font-body-md text-on-background">
-               
-                <Header/>
+                <Header />
                 <QuizMainContent />
-               <WellSpotFooter/>
+                <WellSpotFooter />
             </div>
         </>
     );

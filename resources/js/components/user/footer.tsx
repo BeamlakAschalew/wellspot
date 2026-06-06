@@ -1,13 +1,24 @@
+import type { TranslationKey } from '@/lib/i18n';
+import { useTranslation } from '@/lib/i18n';
+
 const footerGroups = [
     {
-        title: 'Services',
-        links: ['Massage', 'Yoga', 'Therapy', 'Spa'],
+        title: 'footer.services',
+        links: [
+            'service.massage',
+            'service.yoga',
+            'service.therapy',
+            'service.spa',
+        ],
     },
     {
-        title: 'Company',
-        links: ['About Us', 'Privacy Policy', 'Contact'],
+        title: 'footer.company',
+        links: ['footer.about', 'footer.privacy', 'footer.contact'],
     },
-];
+] satisfies {
+    title: TranslationKey;
+    links: TranslationKey[];
+}[];
 
 function MaterialIcon({ children }: { children: string }) {
     return (
@@ -18,23 +29,24 @@ function MaterialIcon({ children }: { children: string }) {
 }
 
 export function Footer() {
+    const { t } = useTranslation();
+
     return (
         <footer className="bg-surface-container py-xl dark:bg-inverse-surface">
             <div className="mx-auto grid max-w-container-max grid-cols-2 gap-gutter px-margin-mobile py-xl text-on-surface md:grid-cols-4 md:px-lg dark:text-inverse-on-surface">
                 <div className="col-span-2 md:col-span-1">
                     <div className="mb-md font-headline-sm text-headline-sm text-primary dark:text-primary-fixed-dim">
-                        WellSpot
+                        {t('app.title')}
                     </div>
                     <p className="max-w-xs font-body-sm text-body-sm text-on-surface-variant dark:text-outline-variant">
-                        Your personal gateway to professional wellness and
-                        holistic health services.
+                        {t('footer.tagline')}
                     </p>
                 </div>
 
                 {footerGroups.map((group) => (
                     <div key={group.title}>
                         <h5 className="mb-md font-label-md text-label-md tracking-wider text-primary uppercase dark:text-primary-fixed-dim">
-                            {group.title}
+                            {t(group.title)}
                         </h5>
                         <ul className="space-y-sm">
                             {group.links.map((link) => (
@@ -43,7 +55,7 @@ export function Footer() {
                                         className="font-body-sm text-body-sm text-on-surface-variant transition-all hover:text-primary dark:text-outline-variant"
                                         href="#"
                                     >
-                                        {link}
+                                        {t(link)}
                                     </a>
                                 </li>
                             ))}
@@ -53,7 +65,7 @@ export function Footer() {
 
                 <div>
                     <h5 className="mb-md font-label-md text-label-md tracking-wider text-primary uppercase dark:text-primary-fixed-dim">
-                        Follow Us
+                        {t('footer.follow')}
                     </h5>
                     <div className="flex gap-md">
                         {['public', 'chat'].map((icon) => (
@@ -71,7 +83,7 @@ export function Footer() {
 
             <div className="mx-auto max-w-container-max border-t border-outline-variant/20 px-margin-mobile pt-lg text-center md:px-lg md:text-left">
                 <p className="font-body-sm text-body-sm text-on-surface-variant dark:text-outline-variant">
-                    &copy; 2024 WellSpot. All rights reserved.
+                    {t('footer.rights')}
                 </p>
             </div>
         </footer>
