@@ -6,6 +6,7 @@ use App\Http\Controllers\ProviderServiceController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
+Route::inertia('/quiz', 'quiz')->name('quiz');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('provider')->name('provider.')->group(function () {

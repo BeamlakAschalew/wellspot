@@ -59,6 +59,105 @@
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
+
+    --color-on-secondary-container: #004666;
+    --color-surface-container-highest: #e1e3e0;
+    --color-tertiary: #003623;
+    --color-on-tertiary-fixed: #002114;
+    --color-surface-variant: #e1e3e0;
+    --color-on-secondary-fixed-variant: #004c6e;
+    --color-on-background: #191c1b;
+    --color-secondary-fixed-dim: #89ceff;
+    --color-secondary-container: #39b8fd;
+    --color-inverse-on-surface: #eff1ee;
+    --color-tertiary-container: #004f35;
+    --color-on-secondary: #ffffff;
+    --color-on-secondary-fixed: #001e2f;
+    --color-surface-dim: #d8dbd7;
+    --color-on-primary: #ffffff;
+    --color-tertiary-fixed: #85f8c4;
+    --color-surface-bright: #f8faf6;
+    --color-on-primary-fixed-variant: #0b513d;
+    --color-on-surface: #191c1b;
+    --color-secondary-fixed: #c9e6ff;
+    --color-primary-container: #064e3b;
+    --color-on-error-container: #93000a;
+    --color-surface-container-lowest: #ffffff;
+    --color-outline-variant: #bfc9c3;
+    --color-outline: #707974;
+    --color-surface-container: #eceeeb;
+    --color-error: #ba1a1a;
+    --color-primary-fixed-dim: #95d3ba;
+    --color-surface-container-high: #e7e9e5;
+    --color-on-tertiary-container: #51c695;
+    --color-error-container: #ffdad6;
+    --color-primary-fixed: #b0f0d6;
+    --color-surface-container-low: #f2f4f1;
+    --color-on-tertiary: #ffffff;
+    --color-on-surface-variant: #404944;
+    --color-on-primary-fixed: #002117;
+    --color-surface-tint: #2b6954;
+    --color-on-tertiary-fixed-variant: #005137;
+    --color-surface: #f8faf6;
+    --color-tertiary-fixed-dim: #68dba9;
+    --color-inverse-surface: #2e312f;
+    --color-inverse-primary: #95d3ba;
+    --color-on-primary-container: #80bea6;
+    --color-on-error: #ffffff;
+
+    --spacing-lg: 24px;
+    --spacing-container-max: 1280px;
+    --spacing-sm: 8px;
+    --spacing-2xl: 64px;
+    --spacing-md: 16px;
+    --spacing-margin-mobile: 16px;
+    --spacing-base: 4px;
+    --spacing-xl: 40px;
+    --spacing-xs: 4px;
+    --spacing-gutter: 24px;
+
+    --font-headline-md: Geist, sans-serif;
+    --font-headline-lg-mobile: Geist, sans-serif;
+    --font-label-md: Geist, sans-serif;
+    --font-body-md: Inter, sans-serif;
+    --font-label-sm: Geist, sans-serif;
+    --font-headline-lg: Geist, sans-serif;
+    --font-body-sm: Inter, sans-serif;
+    --font-headline-sm: Geist, sans-serif;
+    --font-body-lg: Inter, sans-serif;
+    --font-display: Geist, sans-serif;
+
+    --text-headline-md: 24px;
+    --text-headline-md--line-height: 1.3;
+    --text-headline-md--font-weight: 600;
+    --text-headline-lg-mobile: 24px;
+    --text-headline-lg-mobile--line-height: 1.2;
+    --text-headline-lg-mobile--font-weight: 600;
+    --text-label-md: 14px;
+    --text-label-md--line-height: 1;
+    --text-label-md--font-weight: 500;
+    --text-body-md: 16px;
+    --text-body-md--line-height: 1.5;
+    --text-body-md--font-weight: 400;
+    --text-label-sm: 12px;
+    --text-label-sm--line-height: 1;
+    --text-label-sm--letter-spacing: 0.05em;
+    --text-label-sm--font-weight: 600;
+    --text-headline-lg: 32px;
+    --text-headline-lg--line-height: 1.2;
+    --text-headline-lg--font-weight: 600;
+    --text-body-sm: 14px;
+    --text-body-sm--line-height: 1.5;
+    --text-body-sm--font-weight: 400;
+    --text-headline-sm: 20px;
+    --text-headline-sm--line-height: 1.4;
+    --text-headline-sm--font-weight: 600;
+    --text-body-lg: 18px;
+    --text-body-lg--line-height: 1.6;
+    --text-body-lg--font-weight: 400;
+    --text-display: 48px;
+    --text-display--line-height: 1.1;
+    --text-display--font-weight: 700;
 }
 
 :root {
@@ -241,5 +340,62 @@
 
     body {
         @apply bg-background text-foreground;
+    }
+}
+
+.wellspot-home {
+    --background: #f8faf6;
+    --primary: #003527;
+    --primary-foreground: #ffffff;
+    --secondary: #006591;
+    --foreground: #191c1b;
+}
+
+.wellspot-quiz {
+    --background: #f8faf6;
+    --primary: #003527;
+    --primary-foreground: #ffffff;
+    --secondary: #006591;
+    --foreground: #191c1b;
+}
+
+@layer utilities {
+    .glass-search {
+        border: 1px solid rgb(255 255 255 / 30%);
+        background: rgb(255 255 255 / 85%);
+        backdrop-filter: blur(12px);
+    }
+
+    .bento-card {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .bento-card:hover {
+        box-shadow: 0 10px 25px -5px rgb(0 0 0 / 5%);
+        transform: translateY(-4px);
+    }
+
+    .quiz-card-transition {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .option-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .material-symbols-outlined {
+        font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24;
+    }
+
+    .no-scrollbar {
+        scrollbar-width: none;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
     }
 }
