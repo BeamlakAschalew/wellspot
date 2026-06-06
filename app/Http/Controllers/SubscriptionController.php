@@ -21,9 +21,8 @@ class SubscriptionController extends Controller
         $serviceRate = (int) config('services.chapa.service_monthly_amount', 2000);
         $amount = $activeServiceCount * $serviceRate;
         $txRef = 'wellspot-'.$provider->id.'-'.Str::lower(Str::random(12));
-        $callbackUrl = config('services.chapa.callback_url')
-            ?: route('provider.subscription.callback', ['tx_ref' => $txRef]);
-        $returnUrl = config('services.chapa.return_url') ?: route('provider.dashboard');
+        $callbackUrl = $this->callbackUrl($txRef);
+        $returnUrl = $callbackUrl;
         $currency = (string) config('services.chapa.currency', 'ETB');
         $billingEmail = $this->billingEmail($provider, $request);
         $checkoutTitle = Str::limit((string) config('services.chapa.checkout_title', 'WellSpot'), 16, '');
@@ -133,5 +132,19 @@ class SubscriptionController extends Controller
         }
 
         return 'billing@wellspot.test';
+    }
+
+    private function callbackUrl(string $txRef): string
+    {
+        $callbackUrl = config('services.chapa.callback_url')
+            ?: route('provider.subscription.callback');
+
+        if (Str::contains($callbackUrl, ['tx_ref=', 'trx_ref='])) {
+            return (string) $callbackUrl;
+        }
+
+        $separator = Str::contains($callbackUrl, '?') ? '&' : '?';
+
+        return $callbackUrl.$separator.'tx_ref='.urlencode($txRef);
     }
 }

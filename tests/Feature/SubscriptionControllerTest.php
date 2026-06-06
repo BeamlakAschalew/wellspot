@@ -56,6 +56,9 @@ test('providers can initialize a monthly Chapa subscription checkout', function 
         && $request['currency'] === 'ETB'
         && $request['email'] === 'provider@example.test'
         && $request['phone_number'] === '0912345678'
+        && $request['return_url'] === $request['callback_url']
+        && str_contains($request['return_url'], route('provider.subscription.callback', absolute: false))
+        && str_contains($request['return_url'], 'tx_ref=wellspot-'.$provider->id.'-')
         && $request['customization']['title'] === 'WellSpot'
         && mb_strlen($request['customization']['title']) <= 16
         && mb_strlen($request['customization']['description']) <= 32
