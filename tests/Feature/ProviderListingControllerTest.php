@@ -15,8 +15,11 @@ test('providers can create their listing from the guide route', function () {
     $response = $this->actingAs($user)->post(route('provider.listing.store'), [
         'category_id' => $category->id,
         'name' => 'Bole Recovery Studio',
+        'name_am' => 'ቦሌ ሪከቨሪ ስቱዲዮ',
         'headline' => 'Recovery sessions near Bole.',
+        'headline_am' => 'በቦሌ አቅራቢያ የማገገሚያ ክፍለ ጊዜዎች።',
         'description' => 'Simple recovery care in Addis Ababa.',
+        'description_am' => 'በአዲስ አበባ ቀላል የማገገሚያ እንክብካቤ።',
         'phone' => '+251911223344',
         'email' => 'hello@bolerecovery.test',
         'address' => 'Bole Road, Addis Ababa',
@@ -31,6 +34,9 @@ test('providers can create their listing from the guide route', function () {
 
     expect($user->providers()->first())
         ->name->toBe('Bole Recovery Studio')
+        ->name_am->toBe('ቦሌ ሪከቨሪ ስቱዲዮ')
+        ->headline_am->toBe('በቦሌ አቅራቢያ የማገገሚያ ክፍለ ጊዜዎች።')
+        ->description_am->toBe('በአዲስ አበባ ቀላል የማገገሚያ እንክብካቤ።')
         ->slug->toBe('bole-recovery-studio')
         ->status->toBe('draft')
         ->published_at->toBeNull();

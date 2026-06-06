@@ -64,9 +64,12 @@ type CategoryOption = {
 type ProviderSummary = {
     id: number;
     name: string;
+    name_am: string | null;
     logo_url: string | null;
     headline: string | null;
+    headline_am: string | null;
     description: string | null;
+    description_am: string | null;
     status: string;
     category_id: number;
     address: string;
@@ -82,7 +85,9 @@ type ProviderService = {
     id: number;
     category_id: number | null;
     name: string;
+    name_am: string | null;
     description: string | null;
+    description_am: string | null;
     duration_minutes: number;
     price_amount: number;
     currency: string;
@@ -386,7 +391,7 @@ function BillingPanel({
                             >
                                 <CreditCard />
                                 {billing.status === 'active'
-                                    ? 'Renew with Chapa'
+                                    ? 'Paid with Chapa'
                                     : 'Pay with Chapa'}
                             </Button>
                         )}
@@ -529,6 +534,20 @@ export default function Dashboard({
                                         </div>
 
                                         <div className="grid gap-2">
+                                            <Label htmlFor="service-name-am">
+                                                Name (Amharic)
+                                            </Label>
+                                            <Input
+                                                id="service-name-am"
+                                                name="name_am"
+                                                placeholder="ዲፕ ቲሹ ማሳጅ"
+                                            />
+                                            <InputError
+                                                message={errors.name_am}
+                                            />
+                                        </div>
+
+                                        <div className="grid gap-2">
                                             <Label htmlFor="category-id">
                                                 Category
                                             </Label>
@@ -572,6 +591,22 @@ export default function Dashboard({
                                             />
                                             <InputError
                                                 message={errors.description}
+                                            />
+                                        </div>
+
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="service-description-am">
+                                                Description (Amharic)
+                                            </Label>
+                                            <Textarea
+                                                id="service-description-am"
+                                                name="description_am"
+                                                placeholder="ይህ ክፍለ ጊዜ ለማን እንደሚረዳ እና ደንበኞች ምን እንደሚጠብቁ ይግለጹ።"
+                                            />
+                                            <InputError
+                                                message={
+                                                    errors.description_am
+                                                }
                                             />
                                         </div>
 
@@ -951,6 +986,19 @@ function ProviderProfileForm({
                         </div>
 
                         <div className="grid gap-2">
+                            <Label htmlFor="provider-name-am">
+                                Business name (Amharic)
+                            </Label>
+                            <Input
+                                id="provider-name-am"
+                                name="name_am"
+                                defaultValue={provider.name_am ?? ''}
+                                placeholder="ቦሌ ሪከቨሪ ስቱዲዮ"
+                            />
+                            <InputError message={errors.name_am} />
+                        </div>
+
+                        <div className="grid gap-2">
                             <Label htmlFor="provider-category">Category</Label>
                             <Select
                                 name="category_id"
@@ -974,6 +1022,28 @@ function ProviderProfileForm({
                                 </SelectContent>
                             </Select>
                             <InputError message={errors.category_id} />
+                        </div>
+
+                        <div className="grid gap-2">
+                            <Label htmlFor="provider-status">Status</Label>
+                            <Select
+                                name="status"
+                                defaultValue={provider.status}
+                            >
+                                <SelectTrigger
+                                    id="provider-status"
+                                    className="w-full"
+                                >
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="draft">Draft</SelectItem>
+                                    <SelectItem value="published">
+                                        Published
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <InputError message={errors.status} />
                         </div>
                     </div>
 
@@ -1028,6 +1098,19 @@ function ProviderProfileForm({
                     </div>
 
                     <div className="grid gap-2">
+                        <Label htmlFor="provider-headline-am">
+                            Headline (Amharic)
+                        </Label>
+                        <Input
+                            id="provider-headline-am"
+                            name="headline_am"
+                            defaultValue={provider.headline_am ?? ''}
+                            placeholder="በቦሌ አቅራቢያ የሚገኙ የማገገሚያ ክፍለ ጊዜዎች"
+                        />
+                        <InputError message={errors.headline_am} />
+                    </div>
+
+                    <div className="grid gap-2">
                         <Label htmlFor="provider-description">
                             Description
                         </Label>
@@ -1039,6 +1122,20 @@ function ProviderProfileForm({
                             rows={4}
                         />
                         <InputError message={errors.description} />
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="provider-description-am">
+                            Description (Amharic)
+                        </Label>
+                        <Textarea
+                            id="provider-description-am"
+                            name="description_am"
+                            defaultValue={provider.description_am ?? ''}
+                            placeholder="የእንክብካቤ ዘይቤዎን፣ አገልግሎቶችን እና ደንበኞች ምን እንደሚጠብቁ ይግለጹ።"
+                            rows={4}
+                        />
+                        <InputError message={errors.description_am} />
                     </div>
 
                     <div className="grid gap-4 lg:grid-cols-2">
@@ -1098,7 +1195,7 @@ function ProviderProfileForm({
                     <input type="hidden" name="latitude" value={latitude} />
                     <input type="hidden" name="longitude" value={longitude} />
 
-                    <div className="grid gap-4 lg:grid-cols-[1fr_0.32fr]">
+                    <div className="grid gap-4">
                         <div className="grid gap-2">
                             <Label>Map location</Label>
                             <ProviderLocationPicker
@@ -1113,27 +1210,6 @@ function ProviderProfileForm({
                             />
                             <InputError message={errors.latitude} />
                             <InputError message={errors.longitude} />
-                        </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="provider-status">Status</Label>
-                            <Select
-                                name="status"
-                                defaultValue={provider.status}
-                            >
-                                <SelectTrigger
-                                    id="provider-status"
-                                    className="w-full"
-                                >
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="draft">Draft</SelectItem>
-                                    <SelectItem value="published">
-                                        Published
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <InputError message={errors.status} />
                         </div>
                     </div>
 
@@ -1496,6 +1572,18 @@ function ServiceFields({
             </div>
 
             <div className="grid gap-2">
+                <Label htmlFor={`service-${service.id}-name-am`}>
+                    Name (Amharic)
+                </Label>
+                <Input
+                    id={`service-${service.id}-name-am`}
+                    name="name_am"
+                    defaultValue={service.name_am ?? ''}
+                />
+                <InputError message={errors.name_am} />
+            </div>
+
+            <div className="grid gap-2">
                 <Label htmlFor={`service-${service.id}-category`}>
                     Category
                 </Label>
@@ -1538,6 +1626,19 @@ function ServiceFields({
                     rows={4}
                 />
                 <InputError message={errors.description} />
+            </div>
+
+            <div className="grid gap-2">
+                <Label htmlFor={`service-${service.id}-description-am`}>
+                    Description (Amharic)
+                </Label>
+                <Textarea
+                    id={`service-${service.id}-description-am`}
+                    name="description_am"
+                    defaultValue={service.description_am ?? ''}
+                    rows={4}
+                />
+                <InputError message={errors.description_am} />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">

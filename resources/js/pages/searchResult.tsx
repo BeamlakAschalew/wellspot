@@ -6,6 +6,7 @@ import { Footer } from '@/components/user/footer';
 import { Header } from '@/components/user/header';
 import SearchCard from '@/components/user/searchCard';
 import type { SearchProvider } from '@/components/user/searchCard';
+import { useTranslation } from '@/lib/i18n';
 import { explore, home } from '@/routes';
 
 type ExploreFilters = {
@@ -17,10 +18,12 @@ type ExploreFilters = {
 type ExploreCategory = {
     id: number;
     name: string;
+    name_am: string | null;
     slug: string;
     icon: string | null;
     color: string | null;
     description: string | null;
+    description_am: string | null;
     providers_count: number;
 };
 
@@ -45,11 +48,20 @@ function categoryUrl(filters: ExploreFilters, category: string): string {
     });
 }
 
+function localizedValue(
+    value: string | null | undefined,
+    valueAm: string | null | undefined,
+    locale: string,
+): string | null {
+    return locale === 'am' ? (valueAm ?? value ?? null) : (value ?? null);
+}
+
 export default function SearchResult({
     filters,
     categories,
     providers,
 }: SearchResultProps) {
+    const { locale } = useTranslation();
     const normalizedFilters = useMemo(
         () => ({
             search: filters.search ?? '',
@@ -164,7 +176,11 @@ export default function SearchResult({
                                                 key={category.id}
                                                 value={category.slug}
                                             >
-                                                {category.name}
+                                                {localizedValue(
+                                                    category.name,
+                                                    category.name_am,
+                                                    locale,
+                                                )}
                                             </option>
                                         ))}
                                     </select>
@@ -217,7 +233,11 @@ export default function SearchResult({
                                                 preserveScroll
                                             >
                                                 <span className="font-label-md text-label-md">
-                                                    {category.name}
+                                                    {localizedValue(
+                                                        category.name,
+                                                        category.name_am,
+                                                        locale,
+                                                    )}
                                                 </span>
                                                 <span className="rounded-full bg-surface/80 px-sm py-xs font-label-sm text-label-sm text-on-surface">
                                                     {category.providers_count}
@@ -233,7 +253,11 @@ export default function SearchResult({
                             <div className="mb-lg flex flex-col justify-between gap-md border-b border-outline-variant/30 pb-md sm:flex-row sm:items-end">
                                 <div>
                                     <p className="font-label-md text-label-md text-secondary uppercase">
-                                        {activeCategory?.name ??
+                                        {localizedValue(
+                                            activeCategory?.name,
+                                            activeCategory?.name_am,
+                                            locale,
+                                        ) ??
                                             'All providers'}
                                     </p>
                                     <h2 className="mt-xs font-headline-lg text-headline-lg text-primary">

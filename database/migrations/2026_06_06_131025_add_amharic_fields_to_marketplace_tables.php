@@ -11,8 +11,21 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('marketplace_tables', function (Blueprint $table) {
-            //
+        Schema::table('categories', function (Blueprint $table) {
+            $table->string('name_am')->nullable()->after('name');
+            $table->text('description_am')->nullable()->after('description');
+        });
+
+        Schema::table('providers', function (Blueprint $table) {
+            $table->string('name_am')->nullable()->after('name');
+            $table->string('headline_am')->nullable()->after('headline');
+            $table->text('description_am')->nullable()->after('description');
+            $table->json('amenities_am')->nullable()->after('amenities');
+        });
+
+        Schema::table('services', function (Blueprint $table) {
+            $table->string('name_am')->nullable()->after('name');
+            $table->text('description_am')->nullable()->after('description');
         });
     }
 
@@ -21,8 +34,16 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('marketplace_tables', function (Blueprint $table) {
-            //
+        Schema::table('services', function (Blueprint $table) {
+            $table->dropColumn(['name_am', 'description_am']);
+        });
+
+        Schema::table('providers', function (Blueprint $table) {
+            $table->dropColumn(['name_am', 'headline_am', 'description_am', 'amenities_am']);
+        });
+
+        Schema::table('categories', function (Blueprint $table) {
+            $table->dropColumn(['name_am', 'description_am']);
         });
     }
 };

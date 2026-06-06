@@ -27,9 +27,12 @@ class ProviderProfileRequest extends FormRequest
         return [
             'category_id' => ['required', 'integer', Rule::exists('categories', 'id')],
             'name' => ['required', 'string', 'max:120'],
+            'name_am' => ['nullable', 'string', 'max:120'],
             'logo' => ['nullable', File::image()->max('2mb')],
             'headline' => ['nullable', 'string', 'max:180'],
+            'headline_am' => ['nullable', 'string', 'max:180'],
             'description' => ['nullable', 'string', 'max:2000'],
+            'description_am' => ['nullable', 'string', 'max:2000'],
             'phone' => ['nullable', 'string', 'max:40'],
             'email' => ['nullable', 'email', 'max:255'],
             'address' => ['required', 'string', 'max:255'],

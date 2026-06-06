@@ -13,13 +13,16 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import providerSpaImage from '@/assets/wellspot/image-07.jpg';
+import { useTranslation } from '@/lib/i18n';
 import { store as storeBooking } from '@/routes/bookings';
 
 export type ProviderDetailService = {
     id: number;
     name: string;
+    name_am: string | null;
     slug: string;
     description: string | null;
+    description_am: string | null;
     duration_minutes: number | null;
     price_amount: number | null;
     currency: string;
@@ -37,10 +40,13 @@ type ProviderDetailReview = {
 export type ProviderDetailData = {
     id: number;
     name: string;
+    name_am: string | null;
     slug: string;
     logo_url: string | null;
     headline: string | null;
+    headline_am: string | null;
     description: string | null;
+    description_am: string | null;
     phone: string | null;
     email: string | null;
     address: string | null;
@@ -48,9 +54,11 @@ export type ProviderDetailData = {
     latitude: string | null;
     longitude: string | null;
     amenities: string[];
+    amenities_am: string[];
     opening_hours: Record<string, string>;
     category: {
         name: string;
+        name_am: string | null;
         slug: string;
     } | null;
     services: ProviderDetailService[];
@@ -84,6 +92,14 @@ function formatPrice(amount: number | null, currency: string): string {
         maximumFractionDigits: 0,
         style: 'currency',
     }).format(amount);
+}
+
+function localizedValue(
+    value: string | null | undefined,
+    valueAm: string | null | undefined,
+    locale: string,
+): string | null {
+    return locale === 'am' ? (valueAm ?? value ?? null) : (value ?? null);
 }
 
 function getUpcomingDays(): BookingDay[] {
@@ -138,6 +154,7 @@ function startsAtValue(date: string | null, time: string | null): string {
 }
 
 export default function ProviderDetails({ provider }: ProviderDetailsProps) {
+    const { locale } = useTranslation();
     const [selectedServiceId, setSelectedServiceId] = useState(
         provider.services[0]?.id ?? null,
     );
@@ -153,6 +170,23 @@ export default function ProviderDetails({ provider }: ProviderDetailsProps) {
     const location =
         [provider.neighborhood, provider.address].filter(Boolean).join(' - ') ||
         'Location shared after booking';
+    const providerName =
+        localizedValue(provider.name, provider.name_am, locale) ??
+        provider.name;
+    const providerHeadline = localizedValue(
+        provider.headline,
+        provider.headline_am,
+        locale,
+    );
+    const providerDescription = localizedValue(
+        provider.description,
+        provider.description_am,
+        locale,
+    );
+    const amenities =
+        locale === 'am' && provider.amenities_am.length > 0
+            ? provider.amenities_am
+            : provider.amenities;
 
     return (
         <main className="pt-16">
@@ -162,7 +196,11 @@ export default function ProviderDetails({ provider }: ProviderDetailsProps) {
                     <div className="min-w-0">
                         <div className="mb-md flex flex-wrap items-center gap-sm">
                             <span className="rounded-full bg-primary-fixed px-md py-xs font-label-sm text-label-sm text-primary">
-                                {provider.category?.name ?? 'Wellness'}
+                                {localizedValue(
+                                    provider.category?.name,
+                                    provider.category?.name_am,
+                                    locale,
+                                ) ?? 'Wellness'}
                             </span>
                             {provider.is_featured && (
                                 <span className="inline-flex items-center gap-xs rounded-full bg-secondary-fixed px-md py-xs font-label-sm text-label-sm text-secondary">
@@ -176,17 +214,17 @@ export default function ProviderDetails({ provider }: ProviderDetailsProps) {
                             <span className="inline-flex min-w-0 flex-wrap items-center gap-md">
                                 {provider.logo_url && (
                                     <img
-                                        alt={`${provider.name} logo`}
+                                        alt={`${providerName} logo`}
                                         className="h-20 w-20 rounded-xl border border-outline-variant/30 bg-surface object-cover shadow-sm"
                                         src={provider.logo_url}
                                     />
                                 )}
-                                <span>{provider.name}</span>
+                                <span>{providerName}</span>
                             </span>
                         </h1>
                         <p className="mt-md w-full max-w-[44rem] font-body-lg text-body-lg text-pretty text-on-surface-variant">
-                            {provider.headline ??
-                                provider.description ??
+                            {providerHeadline ??
+                                providerDescription ??
                                 'Local wellness provider on WellSpot.'}
                         </p>
 
@@ -217,7 +255,7 @@ export default function ProviderDetails({ provider }: ProviderDetailsProps) {
 
                     <aside className="overflow-hidden rounded-lg border border-outline-variant/30 bg-surface shadow-lg">
                         <img
-                            alt={`${provider.name} wellness space`}
+                            alt={`${providerName} wellness space`}
                             className="h-44 w-full object-cover"
                             src={provider.logo_url ?? providerSpaImage}
                         />
@@ -288,12 +326,24 @@ export default function ProviderDetails({ provider }: ProviderDetailsProps) {
                                             <span className="flex flex-col gap-md sm:flex-row sm:items-start sm:justify-between">
                                                 <span>
                                                     <span className="font-headline-sm text-headline-sm text-pretty text-on-surface">
-                                                        {service.name}
+                                                        {localizedValue(
+                                                            service.name,
+                                                            service.name_am,
+                                                            locale,
+                                                        )}
                                                     </span>
-                                                    {service.description && (
+                                                    {localizedValue(
+                                                        service.description,
+                                                        service.description_am,
+                                                        locale,
+                                                    ) && (
                                                         <span className="mt-xs block font-body-md text-body-md text-on-surface-variant">
                                                             {
-                                                                service.description
+                                                                localizedValue(
+                                                                    service.description,
+                                                                    service.description_am,
+                                                                    locale,
+                                                                )
                                                             }
                                                         </span>
                                                     )}
@@ -319,13 +369,13 @@ export default function ProviderDetails({ provider }: ProviderDetailsProps) {
                             </div>
                         </section>
 
-                        {provider.description && (
+                        {providerDescription && (
                             <section className="rounded-lg border border-outline-variant/20 bg-surface p-lg shadow-sm">
                                 <h2 className="font-headline-md text-headline-md text-on-surface">
                                     About
                                 </h2>
                                 <p className="mt-sm font-body-md text-body-md leading-relaxed text-on-surface-variant">
-                                    {provider.description}
+                                    {providerDescription}
                                 </p>
                             </section>
                         )}
@@ -336,8 +386,8 @@ export default function ProviderDetails({ provider }: ProviderDetailsProps) {
                                     Amenities
                                 </h2>
                                 <div className="mt-md grid gap-sm">
-                                    {provider.amenities.length > 0 ? (
-                                        provider.amenities.map((amenity) => (
+                                    {amenities.length > 0 ? (
+                                        amenities.map((amenity) => (
                                             <span
                                                 className="inline-flex items-center gap-sm text-on-surface-variant"
                                                 key={amenity}
@@ -433,7 +483,7 @@ export default function ProviderDetails({ provider }: ProviderDetailsProps) {
                                     loading="lazy"
                                     referrerPolicy="no-referrer-when-downgrade"
                                     src={mapUrl}
-                                    title={`${provider.name} map`}
+                                    title={`${providerName} map`}
                                 />
                             </section>
                         )}
@@ -475,7 +525,11 @@ export default function ProviderDetails({ provider }: ProviderDetailsProps) {
                                     {selectedService && (
                                         <div className="rounded-lg bg-surface-container p-md">
                                             <p className="font-label-lg text-label-lg text-on-surface">
-                                                {selectedService.name}
+                                                {localizedValue(
+                                                    selectedService.name,
+                                                    selectedService.name_am,
+                                                    locale,
+                                                )}
                                             </p>
                                             <p className="mt-xs text-on-surface-variant">
                                                 {formatPrice(

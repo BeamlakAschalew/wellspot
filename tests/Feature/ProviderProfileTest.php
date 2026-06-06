@@ -20,8 +20,11 @@ test('providers can update and publish their profile', function () {
     $response = $this->actingAs($user)->patch(route('provider.profile.update'), [
         'category_id' => $newCategory->id,
         'name' => 'Bole Recovery Studio',
+        'name_am' => 'ቦሌ ሪከቨሪ ስቱዲዮ',
         'headline' => 'Recovery sessions near Bole Medhanialem.',
+        'headline_am' => 'በቦሌ መድሃኒዓለም አቅራቢያ የማገገሚያ ክፍለ ጊዜዎች።',
         'description' => 'Massage, stretching, and practical recovery care for busy Addis schedules.',
+        'description_am' => 'ለተጨናነቀ የአዲስ አበባ ጊዜ ማሳጅ፣ ስትሬች እና ተግባራዊ የማገገሚያ እንክብካቤ።',
         'phone' => '+251911223344',
         'email' => 'hello@bolerecovery.test',
         'address' => 'Bole Road, Addis Ababa',
@@ -42,9 +45,12 @@ test('providers can update and publish their profile', function () {
     expect($provider->refresh())
         ->category_id->toBe($newCategory->id)
         ->name->toBe('Bole Recovery Studio')
+        ->name_am->toBe('ቦሌ ሪከቨሪ ስቱዲዮ')
         ->slug->toBe('bole-recovery-studio')
         ->headline->toBe('Recovery sessions near Bole Medhanialem.')
+        ->headline_am->toBe('በቦሌ መድሃኒዓለም አቅራቢያ የማገገሚያ ክፍለ ጊዜዎች።')
         ->description->toBe('Massage, stretching, and practical recovery care for busy Addis schedules.')
+        ->description_am->toBe('ለተጨናነቀ የአዲስ አበባ ጊዜ ማሳጅ፣ ስትሬች እና ተግባራዊ የማገገሚያ እንክብካቤ።')
         ->phone->toBe('+251911223344')
         ->email->toBe('hello@bolerecovery.test')
         ->address->toBe('Bole Road, Addis Ababa')

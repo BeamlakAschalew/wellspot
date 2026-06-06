@@ -7,10 +7,12 @@ import {
     Sparkles,
     Star,
 } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 import { show as showProvider } from '@/routes/providers';
 
 export type SearchProviderService = {
     name: string;
+    name_am: string | null;
     price_amount: number | null;
     currency: string | null;
     duration_minutes: number | null;
@@ -19,12 +21,16 @@ export type SearchProviderService = {
 export type SearchProvider = {
     id: number;
     name: string;
+    name_am: string | null;
     slug: string;
     logo_url: string | null;
     headline: string | null;
+    headline_am: string | null;
     description: string | null;
+    description_am: string | null;
     category: {
         name: string;
+        name_am: string | null;
         slug: string;
     } | null;
     services: SearchProviderService[];
@@ -53,10 +59,32 @@ function formatPrice(amount: number | null, currency: string): string {
     }).format(amount);
 }
 
+function localizedValue(
+    value: string | null | undefined,
+    valueAm: string | null | undefined,
+    locale: string,
+): string | null {
+    return locale === 'am' ? (valueAm ?? value ?? null) : (value ?? null);
+}
+
 export default function SearchCard({ provider }: SearchCardProps) {
+    const { locale } = useTranslation();
     const location = provider.neighborhood ?? provider.address ?? 'Addis Ababa';
     const primaryService = provider.services[0];
     const remainingServices = provider.services.slice(1, 4);
+    const providerName =
+        localizedValue(provider.name, provider.name_am, locale) ??
+        provider.name;
+    const providerHeadline = localizedValue(
+        provider.headline,
+        provider.headline_am,
+        locale,
+    );
+    const providerDescription = localizedValue(
+        provider.description,
+        provider.description_am,
+        locale,
+    );
 
     return (
         <Link
@@ -69,7 +97,11 @@ export default function SearchCard({ provider }: SearchCardProps) {
                     <div className="flex flex-wrap items-center gap-sm">
                         <span className="inline-flex items-center gap-xs rounded-full bg-primary-fixed px-sm py-xs font-label-sm text-label-sm text-on-primary-fixed">
                             <Sparkles className="h-3.5 w-3.5" />
-                            {provider.category?.name ?? 'Wellness'}
+                            {localizedValue(
+                                provider.category?.name,
+                                provider.category?.name_am,
+                                locale,
+                            ) ?? 'Wellness'}
                         </span>
                         {provider.is_featured && (
                             <span className="inline-flex items-center gap-xs rounded-full bg-secondary-fixed px-sm py-xs font-label-sm text-label-sm text-on-secondary-fixed">
@@ -83,19 +115,23 @@ export default function SearchCard({ provider }: SearchCardProps) {
                         <div className="flex min-w-0 items-center gap-md">
                             {provider.logo_url && (
                                 <img
-                                    alt={`${provider.name} logo`}
+                                    alt={`${providerName} logo`}
                                     className="h-14 w-14 shrink-0 rounded-lg border border-outline-variant/30 bg-surface-container object-cover"
                                     src={provider.logo_url}
                                 />
                             )}
                             <h2 className="min-w-0 font-headline-lg text-headline-lg text-on-surface transition-colors group-hover:text-primary">
-                                {provider.name}
+                                {providerName}
                             </h2>
                         </div>
                         <p className="mt-sm line-clamp-2 font-body-md text-body-md text-on-surface-variant">
-                            {provider.headline ??
-                                provider.description ??
-                                primaryService?.name ??
+                            {providerHeadline ??
+                                providerDescription ??
+                                localizedValue(
+                                    primaryService?.name,
+                                    primaryService?.name_am,
+                                    locale,
+                                ) ??
                                 'Wellness provider'}
                         </p>
                     </div>
@@ -122,12 +158,25 @@ export default function SearchCard({ provider }: SearchCardProps) {
                     <div className="min-w-0">
                         {primaryService && (
                             <p className="truncate font-label-md text-label-md text-on-surface">
-                                {primaryService.name}
+                                {localizedValue(
+                                    primaryService.name,
+                                    primaryService.name_am,
+                                    locale,
+                                )}
                             </p>
                         )}
                         {remainingServices.length > 0 && (
                             <p className="mt-xs line-clamp-1 font-body-sm text-body-sm text-outline">
-                                Also: {remainingServices.map((service) => service.name).join(', ')}
+                                Also:{' '}
+                                {remainingServices
+                                    .map((service) =>
+                                        localizedValue(
+                                            service.name,
+                                            service.name_am,
+                                            locale,
+                                        ),
+                                    )
+                                    .join(', ')}
                             </p>
                         )}
                     </div>
@@ -145,7 +194,7 @@ export default function SearchCard({ provider }: SearchCardProps) {
             <div className="relative hidden bg-surface-container-low md:block">
                 {provider.logo_url ? (
                     <img
-                        alt={`${provider.name} logo`}
+                        alt={`${providerName} logo`}
                         className="absolute inset-0 h-full w-full object-cover"
                         src={provider.logo_url}
                     />

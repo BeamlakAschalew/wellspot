@@ -16,7 +16,7 @@ class ProviderDetailController extends Controller
         abort_unless($provider->status === 'published', 404);
 
         $provider->load([
-            'category:id,name,slug',
+            'category:id,name,name_am,slug',
             'services' => fn ($query) => $query
                 ->where('status', 'active')
                 ->orderBy('sort_order')
@@ -40,7 +40,7 @@ class ProviderDetailController extends Controller
     }
 
     /**
-     * @return array{id: int, name: string, slug: string, logo_url: ?string, headline: ?string, description: ?string, phone: ?string, email: ?string, address: ?string, neighborhood: ?string, latitude: ?string, longitude: ?string, amenities: array<int, string>, opening_hours: array<string, mixed>, category: ?array{name: string, slug: string}, services: array<int, array{id: int, name: string, slug: string, description: ?string, duration_minutes: ?int, price_amount: ?int, currency: string}>, reviews: array<int, array{id: int, reviewer_name: ?string, rating: int, title: ?string, comment: ?string, created_at: ?string}>, rating: ?float, reviews_count: int, starting_price: ?int, currency: string, is_featured: bool}
+     * @return array{id: int, name: string, name_am: ?string, slug: string, logo_url: ?string, headline: ?string, headline_am: ?string, description: ?string, description_am: ?string, phone: ?string, email: ?string, address: ?string, neighborhood: ?string, latitude: ?string, longitude: ?string, amenities: array<int, string>, amenities_am: array<int, string>, opening_hours: array<string, mixed>, category: ?array{name: string, name_am: ?string, slug: string}, services: array<int, array{id: int, name: string, name_am: ?string, slug: string, description: ?string, description_am: ?string, duration_minutes: ?int, price_amount: ?int, currency: string}>, reviews: array<int, array{id: int, reviewer_name: ?string, rating: int, title: ?string, comment: ?string, created_at: ?string}>, rating: ?float, reviews_count: int, starting_price: ?int, currency: string, is_featured: bool}
      */
     protected function providerPayload(Provider $provider): array
     {
@@ -53,10 +53,13 @@ class ProviderDetailController extends Controller
         return [
             'id' => $provider->id,
             'name' => $provider->name,
+            'name_am' => $provider->name_am,
             'slug' => $provider->slug,
             'logo_url' => $provider->logo_url,
             'headline' => $provider->headline,
+            'headline_am' => $provider->headline_am,
             'description' => $provider->description,
+            'description_am' => $provider->description_am,
             'phone' => $provider->phone,
             'email' => $provider->email,
             'address' => $provider->address,
@@ -64,16 +67,20 @@ class ProviderDetailController extends Controller
             'latitude' => $provider->latitude,
             'longitude' => $provider->longitude,
             'amenities' => $provider->amenities ?? [],
+            'amenities_am' => $provider->amenities_am ?? [],
             'opening_hours' => $provider->opening_hours ?? [],
             'category' => $provider->category ? [
                 'name' => $provider->category->name,
+                'name_am' => $provider->category->name_am,
                 'slug' => $provider->category->slug,
             ] : null,
             'services' => $services->map(fn (Service $service): array => [
                 'id' => $service->id,
                 'name' => $service->name,
+                'name_am' => $service->name_am,
                 'slug' => $service->slug,
                 'description' => $service->description,
+                'description_am' => $service->description_am,
                 'duration_minutes' => $service->duration_minutes,
                 'price_amount' => $service->price_amount,
                 'currency' => $service->currency ?? 'ETB',

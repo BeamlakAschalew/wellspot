@@ -17,6 +17,7 @@ class SubscriptionController extends Controller
         $provider = $this->providerForUser($request);
         $activeServiceCount = $provider->services()->where('status', 'active')->count();
         abort_unless($activeServiceCount > 0, 422, __('Add at least one active service before subscribing.'));
+        abort_if($this->hasActiveSubscription($provider), 422, __('Your subscription is already active.'));
 
         $serviceRate = (int) config('services.chapa.service_monthly_amount', 2000);
         $amount = $activeServiceCount * $serviceRate;
@@ -114,6 +115,14 @@ class SubscriptionController extends Controller
         return Provider::query()
             ->where('user_id', $request->user()->id)
             ->firstOrFail();
+    }
+
+    private function hasActiveSubscription(Provider $provider): bool
+    {
+        return $provider->subscriptions()
+            ->where('status', 'active')
+            ->where('expires_at', '>', now())
+            ->exists();
     }
 
     private function billingEmail(Provider $provider, Request $request): string

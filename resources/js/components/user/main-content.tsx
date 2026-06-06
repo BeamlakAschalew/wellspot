@@ -25,7 +25,7 @@ import heroImage from '@/assets/wellspot/image-06.jpg';
 import providerSpaImage from '@/assets/wellspot/image-07.jpg';
 import type { TranslationKey } from '@/lib/i18n';
 import { useTranslation } from '@/lib/i18n';
-import { explore, home, register } from '@/routes';
+import { explore, home, quiz, register } from '@/routes';
 import { show as showProvider } from '@/routes/providers';
 
 export type HomeFilters = {
@@ -37,15 +37,18 @@ export type HomeFilters = {
 export type HomeCategory = {
     id: number;
     name: string;
+    name_am: string | null;
     slug: string;
     icon: string | null;
     color: string | null;
     description: string | null;
+    description_am: string | null;
     providers_count: number;
 };
 
 type ProviderService = {
     name: string;
+    name_am: string | null;
     price_amount: number | null;
     currency: string | null;
     duration_minutes: number | null;
@@ -54,11 +57,16 @@ type ProviderService = {
 export type HomeProvider = {
     id: number;
     name: string;
+    name_am: string | null;
     slug: string;
     logo_url: string | null;
     headline: string | null;
+    headline_am: string | null;
+    description: string | null;
+    description_am: string | null;
     category: {
         name: string;
+        name_am: string | null;
         slug: string;
     } | null;
     services: ProviderService[];
@@ -175,6 +183,14 @@ function formatPrice(
     }).format(amount);
 }
 
+function localizedValue(
+    value: string | null | undefined,
+    valueAm: string | null | undefined,
+    locale: string,
+): string | null {
+    return locale === 'am' ? (valueAm ?? value ?? null) : (value ?? null);
+}
+
 function categoryHref(filters: HomeFilters, category: string) {
     return explore.url({
         query: compactFilters({
@@ -191,7 +207,7 @@ function HeroSection({
     categories: HomeCategory[];
     filters: HomeFilters;
 }) {
-    const { t } = useTranslation();
+    const { locale, t } = useTranslation();
     const [form, setForm] = useState<HomeFilters>(filters);
 
     function submit(event: FormEvent<HTMLFormElement>) {
@@ -289,7 +305,11 @@ function HeroSection({
                         </option>
                         {categories.map((category) => (
                             <option key={category.id} value={category.slug}>
-                                {category.name}
+                                {localizedValue(
+                                    category.name,
+                                    category.name_am,
+                                    locale,
+                                )}
                             </option>
                         ))}
                     </select>
@@ -302,6 +322,15 @@ function HeroSection({
                         <Search className="h-5 w-5" />
                     </button>
                 </form>
+
+                <Link
+                    className="mx-auto mt-md inline-flex min-h-11 items-center justify-center gap-sm rounded-full border border-primary/30 bg-surface/85 px-lg py-sm font-label-md text-label-md text-primary shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-primary/60 hover:bg-primary-fixed focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none"
+                    href={quiz.url()}
+                    prefetch
+                >
+                    <Smile className="h-4 w-4" />
+                    Discover places based on your mood
+                </Link>
             </div>
         </section>
     );
@@ -400,10 +429,21 @@ function ProviderCard({
 }) {
     const { locale, t } = useTranslation();
     const serviceNames = provider.services
-        .map((service) => service.name)
+        .map((service) =>
+            localizedValue(service.name, service.name_am, locale),
+        )
+        .filter(Boolean)
         .join(', ');
     const location = provider.neighborhood ?? provider.address ?? 'Addis Ababa';
     const cardImage = provider.logo_url ?? image;
+    const providerName =
+        localizedValue(provider.name, provider.name_am, locale) ??
+        provider.name;
+    const providerHeadline = localizedValue(
+        provider.headline,
+        provider.headline_am,
+        locale,
+    );
 
     return (
         <Link
@@ -413,7 +453,7 @@ function ProviderCard({
         >
             <div className="relative aspect-[4/5] overflow-hidden">
                 <img
-                    alt={`${provider.name} wellness provider`}
+                    alt={`${providerName} wellness provider`}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     src={cardImage}
                 />
@@ -425,7 +465,7 @@ function ProviderCard({
                             src={provider.logo_url}
                         />
                         <span className="truncate font-label-sm text-label-sm text-on-surface">
-                            {provider.name}
+                            {providerName}
                         </span>
                     </div>
                 )}
@@ -449,11 +489,15 @@ function ProviderCard({
                     <div className="mb-xs flex items-start justify-between gap-sm">
                         <div className="min-w-0">
                             <p className="mb-xs font-label-sm text-label-sm text-secondary uppercase">
-                                {provider.category?.name ??
+                                {localizedValue(
+                                    provider.category?.name,
+                                    provider.category?.name_am,
+                                    locale,
+                                ) ??
                                     t('home.provider.wellness')}
                             </p>
                             <h3 className="font-headline-sm text-headline-sm text-pretty text-on-surface">
-                                {provider.name}
+                                {providerName}
                             </h3>
                         </div>
                         <span className="shrink-0 text-right font-label-md text-label-md font-bold text-primary">
@@ -466,7 +510,7 @@ function ProviderCard({
                         </span>
                     </div>
                     <p className="line-clamp-3 font-body-sm text-body-sm text-on-surface-variant">
-                        {provider.headline ?? serviceNames}
+                        {providerHeadline ?? serviceNames}
                     </p>
                     {serviceNames && (
                         <p className="mt-sm line-clamp-2 font-body-sm text-body-sm text-outline">

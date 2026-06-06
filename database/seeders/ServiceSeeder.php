@@ -16,12 +16,13 @@ class ServiceSeeder extends Seeder
     {
         Provider::query()->with('category')->get()->each(function (Provider $provider): void {
             collect([
-                ['Intro Session', 45, 700],
-                ['Signature Care Session', 60, 1200],
-                ['Extended Reset', 90, 1800],
+                ['Intro Session', 'መግቢያ ክፍለ ጊዜ', 45, 700],
+                ['Signature Care Session', 'ሲግኔቸር እንክብካቤ ክፍለ ጊዜ', 60, 1200],
+                ['Extended Reset', 'የተራዘመ ማደሻ', 90, 1800],
             ])->each(function (array $service, int $index) use ($provider): void {
-                [$name, $duration, $price] = $service;
+                [$name, $nameAm, $duration, $price] = $service;
                 $serviceName = $provider->category->name.' '.$name;
+                $serviceNameAm = trim(($provider->category->name_am ?? $provider->category->name).' '.$nameAm);
 
                 Service::query()->updateOrCreate(
                     [
@@ -31,7 +32,9 @@ class ServiceSeeder extends Seeder
                     [
                         'category_id' => $provider->category_id,
                         'name' => $serviceName,
+                        'name_am' => $serviceNameAm,
                         'description' => 'A focused '.$duration.' minute session at '.$provider->name.'.',
+                        'description_am' => 'በ'.($provider->name_am ?? $provider->name).' የሚሰጥ '.$duration.' ደቂቃ የተተኮረ ክፍለ ጊዜ።',
                         'duration_minutes' => $duration,
                         'price_amount' => $price,
                         'currency' => 'ETB',

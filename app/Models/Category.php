@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'slug', 'icon', 'color', 'description', 'sort_order'])]
+#[Fillable(['name', 'name_am', 'slug', 'icon', 'color', 'description', 'description_am', 'sort_order'])]
 class Category extends Model
 {
     /** @use HasFactory<CategoryFactory> */

@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
 class ProviderSearch
 {
     /**
-     * @return Collection<int, array{id: int, name: string, slug: string, icon: ?string, color: ?string, description: ?string, providers_count: int}>
+     * @return Collection<int, array{id: int, name: string, name_am: ?string, slug: string, icon: ?string, color: ?string, description: ?string, description_am: ?string, providers_count: int}>
      */
     public function categories(): Collection
     {
@@ -23,20 +23,22 @@ class ProviderSearch
             ])
             ->orderBy('sort_order')
             ->orderBy('name')
-            ->get(['id', 'name', 'slug', 'icon', 'color', 'description'])
+            ->get(['id', 'name', 'name_am', 'slug', 'icon', 'color', 'description', 'description_am'])
             ->map(fn (Category $category): array => [
                 'id' => $category->id,
                 'name' => $category->name,
+                'name_am' => $category->name_am,
                 'slug' => $category->slug,
                 'icon' => $category->icon,
                 'color' => $category->color,
                 'description' => $category->description,
+                'description_am' => $category->description_am,
                 'providers_count' => $category->providers_count,
             ]);
     }
 
     /**
-     * @return Collection<int, array{id: int, name: string, slug: string, logo_url: ?string, headline: ?string, description: ?string, category: ?array{name: string, slug: string}, services: array<int, array{name: string, price_amount: ?int, currency: ?string, duration_minutes: ?int}>, starting_price: ?int, currency: string, neighborhood: ?string, address: ?string, rating: ?float, reviews_count: int, is_featured: bool}>
+     * @return Collection<int, array{id: int, name: string, name_am: ?string, slug: string, logo_url: ?string, headline: ?string, headline_am: ?string, description: ?string, description_am: ?string, category: ?array{name: string, name_am: ?string, slug: string}, services: array<int, array{name: string, name_am: ?string, price_amount: ?int, currency: ?string, duration_minutes: ?int}>, starting_price: ?int, currency: string, neighborhood: ?string, address: ?string, rating: ?float, reviews_count: int, is_featured: bool}>
      */
     public function providers(?string $search = null, ?string $location = null, ?string $category = null, int $limit = 12): Collection
     {
@@ -47,7 +49,7 @@ class ProviderSearch
     }
 
     /**
-     * @return Collection<int, array{id: int, name: string, slug: string, logo_url: ?string, headline: ?string, description: ?string, category: ?array{name: string, slug: string}, services: array<int, array{name: string, price_amount: ?int, currency: ?string, duration_minutes: ?int}>, starting_price: ?int, currency: string, neighborhood: ?string, address: ?string, rating: ?float, reviews_count: int, is_featured: bool}>
+     * @return Collection<int, array{id: int, name: string, name_am: ?string, slug: string, logo_url: ?string, headline: ?string, headline_am: ?string, description: ?string, description_am: ?string, category: ?array{name: string, name_am: ?string, slug: string}, services: array<int, array{name: string, name_am: ?string, price_amount: ?int, currency: ?string, duration_minutes: ?int}>, starting_price: ?int, currency: string, neighborhood: ?string, address: ?string, rating: ?float, reviews_count: int, is_featured: bool}>
      */
     public function topRated(int $limit = 4): Collection
     {
@@ -66,7 +68,7 @@ class ProviderSearch
     {
         return Provider::query()
             ->with([
-                'category:id,name,slug',
+                'category:id,name,name_am,slug',
                 'services' => fn ($query) => $query
                     ->where('status', 'active')
                     ->orderBy('sort_order')
@@ -87,15 +89,22 @@ class ProviderSearch
             ->when($search, fn ($query, string $term) => $query->where(function ($query) use ($term): void {
                 $query
                     ->where('name', 'like', "%{$term}%")
+                    ->orWhere('name_am', 'like', "%{$term}%")
                     ->orWhere('headline', 'like', "%{$term}%")
+                    ->orWhere('headline_am', 'like', "%{$term}%")
                     ->orWhere('description', 'like', "%{$term}%")
-                    ->orWhereHas('category', fn ($categoryQuery) => $categoryQuery->where('name', 'like', "%{$term}%"))
+                    ->orWhere('description_am', 'like', "%{$term}%")
+                    ->orWhereHas('category', fn ($categoryQuery) => $categoryQuery
+                        ->where('name', 'like', "%{$term}%")
+                        ->orWhere('name_am', 'like', "%{$term}%"))
                     ->orWhereHas('services', fn ($serviceQuery) => $serviceQuery
                         ->where('status', 'active')
                         ->where(function ($serviceQuery) use ($term): void {
                             $serviceQuery
                                 ->where('name', 'like', "%{$term}%")
-                                ->orWhere('description', 'like', "%{$term}%");
+                                ->orWhere('name_am', 'like', "%{$term}%")
+                                ->orWhere('description', 'like', "%{$term}%")
+                                ->orWhere('description_am', 'like', "%{$term}%");
                         }));
             }))
             ->when($location, fn ($query, string $term) => $query->where(function ($query) use ($term): void {
@@ -110,7 +119,7 @@ class ProviderSearch
     }
 
     /**
-     * @return array{id: int, name: string, slug: string, logo_url: ?string, headline: ?string, description: ?string, category: ?array{name: string, slug: string}, services: array<int, array{name: string, price_amount: ?int, currency: ?string, duration_minutes: ?int}>, starting_price: ?int, currency: string, neighborhood: ?string, address: ?string, rating: ?float, reviews_count: int, is_featured: bool}
+     * @return array{id: int, name: string, name_am: ?string, slug: string, logo_url: ?string, headline: ?string, headline_am: ?string, description: ?string, description_am: ?string, category: ?array{name: string, name_am: ?string, slug: string}, services: array<int, array{name: string, name_am: ?string, price_amount: ?int, currency: ?string, duration_minutes: ?int}>, starting_price: ?int, currency: string, neighborhood: ?string, address: ?string, rating: ?float, reviews_count: int, is_featured: bool}
      */
     protected function payload(Provider $provider): array
     {
@@ -120,16 +129,21 @@ class ProviderSearch
         return [
             'id' => $provider->id,
             'name' => $provider->name,
+            'name_am' => $provider->name_am,
             'slug' => $provider->slug,
             'logo_url' => $provider->logo_url,
             'headline' => $provider->headline,
+            'headline_am' => $provider->headline_am,
             'description' => $provider->description,
+            'description_am' => $provider->description_am,
             'category' => $provider->category ? [
                 'name' => $provider->category->name,
+                'name_am' => $provider->category->name_am,
                 'slug' => $provider->category->slug,
             ] : null,
             'services' => $services->map(fn (Service $service): array => [
                 'name' => $service->name,
+                'name_am' => $service->name_am,
                 'price_amount' => $service->price_amount,
                 'currency' => $service->currency,
                 'duration_minutes' => $service->duration_minutes,

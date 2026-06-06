@@ -14,7 +14,9 @@ test('providers can add a service from the dashboard', function () {
     $response = $this->actingAs($user)->post(route('provider.services.store'), [
         'category_id' => $category->id,
         'name' => 'Deep Tissue Massage',
+        'name_am' => 'ዲፕ ቲሹ ማሳጅ',
         'description' => 'Focused muscle recovery session.',
+        'description_am' => 'በጡንቻ ማገገም ላይ የተተኮረ ክፍለ ጊዜ።',
         'duration_minutes' => 60,
         'price_amount' => 1200,
         'status' => 'active',
@@ -29,7 +31,9 @@ test('providers can add a service from the dashboard', function () {
         ],
     ]);
 
-    expect($provider->services()->where('name', 'Deep Tissue Massage')->exists())->toBeTrue();
+    expect($provider->services()->where('name', 'Deep Tissue Massage')->first())
+        ->name_am->toBe('ዲፕ ቲሹ ማሳጅ')
+        ->description_am->toBe('በጡንቻ ማገገም ላይ የተተኮረ ክፍለ ጊዜ።');
 });
 
 test('service validation rejects incomplete payloads', function () {
@@ -58,7 +62,9 @@ test('providers can update their own services', function () {
     $response = $this->actingAs($user)->patch(route('provider.services.update', $service), [
         'category_id' => $category->id,
         'name' => 'Recovery Massage',
+        'name_am' => 'ሪከቨሪ ማሳጅ',
         'description' => 'Updated recovery session for athletes.',
+        'description_am' => 'ለአትሌቶች የተዘመነ የማገገሚያ ክፍለ ጊዜ።',
         'duration_minutes' => 90,
         'price_amount' => 1600,
         'status' => 'inactive',
@@ -75,8 +81,10 @@ test('providers can update their own services', function () {
 
     expect($service->refresh())
         ->name->toBe('Recovery Massage')
+        ->name_am->toBe('ሪከቨሪ ማሳጅ')
         ->slug->toBe('recovery-massage')
         ->description->toBe('Updated recovery session for athletes.')
+        ->description_am->toBe('ለአትሌቶች የተዘመነ የማገገሚያ ክፍለ ጊዜ።')
         ->duration_minutes->toBe(90)
         ->price_amount->toBe(1600)
         ->status->toBe('inactive')

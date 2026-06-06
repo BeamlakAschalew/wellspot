@@ -26,7 +26,9 @@ class ProviderServiceRequest extends FormRequest
         return [
             'category_id' => ['nullable', 'integer', Rule::exists('categories', 'id')],
             'name' => ['required', 'string', 'max:120'],
+            'name_am' => ['nullable', 'string', 'max:120'],
             'description' => ['nullable', 'string', 'max:1000'],
+            'description_am' => ['nullable', 'string', 'max:1000'],
             'duration_minutes' => ['required', 'integer', 'min:15', 'max:480'],
             'price_amount' => ['required', 'integer', 'min:1', 'max:1000000'],
             'status' => ['nullable', 'string', Rule::in(['active', 'inactive'])],

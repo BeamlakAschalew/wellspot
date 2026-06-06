@@ -121,3 +121,37 @@ test('pending subscription attempts do not block retrying Chapa checkout', funct
             ->where('subscription.status', 'pending')
         );
 });
+
+test('active subscription sets next pay day and blocks checkout', function () {
+    $this->travelTo(now());
+
+    $category = Category::factory()->create();
+    $owner = User::factory()->create();
+    $provider = Provider::factory()
+        ->for($owner)
+        ->for($category)
+        ->create();
+    Service::factory()->for($provider)->for($category)->create();
+    ProviderSubscription::query()->create([
+        'provider_id' => $provider->id,
+        'plan' => 'monthly',
+        'amount' => 2000,
+        'currency' => 'ETB',
+        'chapa_tx_ref' => 'wellspot-active-test',
+        'chapa_checkout_url' => 'https://checkout.chapa.co/checkout/test',
+        'status' => 'active',
+        'started_at' => now(),
+        'expires_at' => now()->addDays(30),
+    ]);
+
+    $response = $this->actingAs($owner)->get(route('provider.dashboard'));
+
+    $response
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('billing.status', 'active')
+            ->where('billing.can_start_checkout', false)
+            ->where('subscription.status', 'active')
+            ->where('billing.next_payment_due_at', fn (string $value): bool => str_starts_with($value, now()->addDays(30)->format('Y-m-d')))
+        );
+});

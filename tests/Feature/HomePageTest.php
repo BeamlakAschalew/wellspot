@@ -9,6 +9,7 @@ use Inertia\Testing\AssertableInertia as Assert;
 test('home page includes live categories providers and top rated providers', function () {
     $massage = Category::factory()->create([
         'name' => 'Spa & Massage',
+        'name_am' => 'ስፓ እና ማሳጅ',
         'slug' => 'spa-massage',
         'sort_order' => 1,
     ]);
@@ -21,8 +22,10 @@ test('home page includes live categories providers and top rated providers', fun
         ->for($massage)
         ->create([
             'name' => 'Bole Balance Spa',
+            'name_am' => 'ቦሌ ባላንስ ስፓ',
             'logo_path' => 'provider-logos/bole-balance.png',
             'headline' => 'Recovery massage near Bole.',
+            'headline_am' => 'በቦሌ አቅራቢያ የማገገሚያ ማሳጅ።',
             'neighborhood' => 'Bole',
             'is_featured' => true,
         ]);
@@ -35,6 +38,7 @@ test('home page includes live categories providers and top rated providers', fun
 
     Service::factory()->for($topRatedProvider)->for($massage)->create([
         'name' => 'Deep Tissue Massage',
+        'name_am' => 'ዲፕ ቲሹ ማሳጅ',
         'price_amount' => 1200,
         'currency' => 'ETB',
         'sort_order' => 1,
@@ -58,14 +62,19 @@ test('home page includes live categories providers and top rated providers', fun
             ->where('filters.location', '')
             ->where('filters.category', '')
             ->where('categories.0.name', 'Spa & Massage')
+            ->where('categories.0.name_am', 'ስፓ እና ማሳጅ')
             ->where('categories.0.providers_count', 1)
             ->where('providers.0.name', 'Bole Balance Spa')
+            ->where('providers.0.name_am', 'ቦሌ ባላንስ ስፓ')
+            ->where('providers.0.headline_am', 'በቦሌ አቅራቢያ የማገገሚያ ማሳጅ።')
             ->where('providers.0.logo_url', $topRatedProvider->logo_url)
             ->where('providers.0.starting_price', 1200)
             ->where('providers.0.rating', 4.5)
             ->where('providers.0.reviews_count', 2)
             ->where('providers.0.services.0.name', 'Deep Tissue Massage')
+            ->where('providers.0.services.0.name_am', 'ዲፕ ቲሹ ማሳጅ')
             ->where('topRatedProviders.0.name', 'Bole Balance Spa')
+            ->where('topRatedProviders.0.name_am', 'ቦሌ ባላንስ ስፓ')
             ->where('topRatedProviders.0.logo_url', $topRatedProvider->logo_url)
         );
 });
@@ -77,6 +86,7 @@ test('home page filters providers by search location and category', function () 
         ->for($massage)
         ->create([
             'name' => 'Kazanchis Recovery Studio',
+            'name_am' => 'ካዛንቺስ ሪከቨሪ ስቱዲዮ',
             'neighborhood' => 'Kazanchis',
             'address' => 'Kazanchis, Addis Ababa',
         ]);
@@ -89,6 +99,7 @@ test('home page filters providers by search location and category', function () 
 
     Service::factory()->for($matchingProvider)->for($massage)->create([
         'name' => 'Aromatherapy Massage',
+        'name_am' => 'አሮማቴራፒ ማሳጅ',
     ]);
     Service::factory()->for($otherProvider)->for($fitness)->create([
         'name' => 'Strength Training',
@@ -108,6 +119,40 @@ test('home page filters providers by search location and category', function () 
             ->where('filters.category', 'spa-massage')
             ->has('providers', 1)
             ->where('providers.0.name', 'Kazanchis Recovery Studio')
+        );
+});
+
+test('home page filters providers by Amharic provider and service text', function () {
+    $category = Category::factory()->create(['slug' => 'spa-massage']);
+    $matchingProvider = Provider::factory()
+        ->for($category)
+        ->create([
+            'name' => 'Kazanchis Recovery Studio',
+            'name_am' => 'ካዛንቺስ ሪከቨሪ ስቱዲዮ',
+            'headline_am' => 'ማሳጅ እና የማገገሚያ ክፍለ ጊዜዎች።',
+        ]);
+    $otherProvider = Provider::factory()
+        ->for($category)
+        ->create(['name' => 'Bole Fitness Studio']);
+
+    Service::factory()->for($matchingProvider)->for($category)->create([
+        'name' => 'Aromatherapy Massage',
+        'name_am' => 'አሮማቴራፒ ማሳጅ',
+    ]);
+    Service::factory()->for($otherProvider)->for($category)->create([
+        'name' => 'Strength Training',
+    ]);
+
+    $response = $this->get(route('home', [
+        'search' => 'አሮማቴራፒ',
+    ]));
+
+    $response
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('providers', 1)
+            ->where('providers.0.name_am', 'ካዛንቺስ ሪከቨሪ ስቱዲዮ')
+            ->where('providers.0.services.0.name_am', 'አሮማቴራፒ ማሳጅ')
         );
 });
 

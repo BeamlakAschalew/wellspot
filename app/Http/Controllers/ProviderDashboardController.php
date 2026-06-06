@@ -19,9 +19,11 @@ class ProviderDashboardController extends Controller
             ['slug' => 'spa-massage'],
             [
                 'name' => 'Spa & Massage',
+                'name_am' => 'ስፓ እና ማሳጅ',
                 'icon' => 'sparkles',
                 'color' => 'emerald',
                 'description' => 'Massage, spa, and body recovery providers.',
+                'description_am' => 'የማሳጅ፣ ስፓ እና የሰውነት ማገገሚያ አቅራቢዎች።',
                 'sort_order' => 1,
             ],
         );
@@ -34,8 +36,10 @@ class ProviderDashboardController extends Controller
                 [
                     'category_id' => $defaultCategory->id,
                     'name' => "{$user->name}'s Wellness Studio",
+                    'name_am' => "{$user->name} የዌልነስ ስቱዲዮ",
                     'slug' => Str::slug($user->name.' wellness studio').'-'.$user->id,
                     'headline' => 'Set up your WellSpot provider profile.',
+                    'headline_am' => 'የWellSpot አቅራቢ መገለጫዎን ያዘጋጁ።',
                     'address' => 'Addis Ababa, Ethiopia',
                     'status' => 'draft',
                 ],
@@ -43,7 +47,7 @@ class ProviderDashboardController extends Controller
 
         $services = $provider->services()
             ->latest()
-            ->get(['id', 'category_id', 'name', 'description', 'duration_minutes', 'price_amount', 'currency', 'status', 'sort_order']);
+            ->get(['id', 'category_id', 'name', 'name_am', 'description', 'description_am', 'duration_minutes', 'price_amount', 'currency', 'status', 'sort_order']);
         $activeServiceCount = $services->where('status', 'active')->count();
         $serviceBillingRate = (int) config('services.chapa.service_monthly_amount', 2000);
 
@@ -76,20 +80,29 @@ class ProviderDashboardController extends Controller
                 'comment' => $review->comment,
             ]);
 
-        $subscription = $provider->subscription()
+        $subscription = $provider->subscriptions()
+            ->where('status', 'active')
+            ->where('expires_at', '>', now())
+            ->latest('expires_at')
+            ->first(['id', 'plan', 'amount', 'currency', 'status', 'started_at', 'expires_at']);
+        $latestSubscriptionAttempt = $subscription ?? $provider->subscription()
             ->first(['id', 'plan', 'amount', 'currency', 'status', 'started_at', 'expires_at']);
         $isSubscriptionActive = $subscription?->status === 'active'
             && $subscription->expires_at !== null
             && $subscription->expires_at->isFuture();
         $nextPaymentDueAt = $isSubscriptionActive ? $subscription->expires_at : now();
+        $canStartCheckout = $activeServiceCount > 0 && ! $isSubscriptionActive;
 
         return Inertia::render('dashboard', [
             'provider' => [
                 'id' => $provider->id,
                 'name' => $provider->name,
+                'name_am' => $provider->name_am,
                 'logo_url' => $provider->logo_url,
                 'headline' => $provider->headline,
+                'headline_am' => $provider->headline_am,
                 'description' => $provider->description,
+                'description_am' => $provider->description_am,
                 'status' => $provider->status,
                 'category_id' => $provider->category_id,
                 'address' => $provider->address,
@@ -113,7 +126,9 @@ class ProviderDashboardController extends Controller
                 'id' => $service->id,
                 'category_id' => $service->category_id,
                 'name' => $service->name,
+                'name_am' => $service->name_am,
                 'description' => $service->description,
+                'description_am' => $service->description_am,
                 'duration_minutes' => $service->duration_minutes,
                 'price_amount' => $service->price_amount,
                 'currency' => $service->currency,
@@ -122,14 +137,14 @@ class ProviderDashboardController extends Controller
             ]),
             'bookings' => $recentBookings,
             'reviews' => $latestReviews,
-            'subscription' => $subscription ? [
-                'id' => $subscription->id,
-                'plan' => $subscription->plan,
-                'amount' => $subscription->amount,
-                'currency' => $subscription->currency,
-                'status' => $subscription->status,
-                'started_at' => $subscription->started_at?->toIso8601String(),
-                'expires_at' => $subscription->expires_at?->toIso8601String(),
+            'subscription' => $latestSubscriptionAttempt ? [
+                'id' => $latestSubscriptionAttempt->id,
+                'plan' => $latestSubscriptionAttempt->plan,
+                'amount' => $latestSubscriptionAttempt->amount,
+                'currency' => $latestSubscriptionAttempt->currency,
+                'status' => $latestSubscriptionAttempt->status,
+                'started_at' => $latestSubscriptionAttempt->started_at?->toIso8601String(),
+                'expires_at' => $latestSubscriptionAttempt->expires_at?->toIso8601String(),
             ] : null,
             'billing' => [
                 'status' => $isSubscriptionActive
@@ -138,12 +153,14 @@ class ProviderDashboardController extends Controller
                 'active_service_count' => $activeServiceCount,
                 'service_monthly_amount' => $serviceBillingRate,
                 'monthly_total' => $activeServiceCount * $serviceBillingRate,
-                'currency' => $subscription?->currency ?? 'ETB',
+                'currency' => $latestSubscriptionAttempt?->currency ?? 'ETB',
                 'next_payment_due_at' => $nextPaymentDueAt->toIso8601String(),
-                'can_start_checkout' => $activeServiceCount > 0,
+                'can_start_checkout' => $canStartCheckout,
                 'checkout_blocker' => $activeServiceCount === 0
                     ? __('Add at least one active service before subscribing.')
-                    : null,
+                    : ($isSubscriptionActive
+                        ? __('Your subscription is active until the next pay day.')
+                        : null),
             ],
             'stats' => [
                 'services' => $services->count(),

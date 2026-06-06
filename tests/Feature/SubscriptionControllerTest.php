@@ -141,3 +141,39 @@ test('successful Chapa callback activates the subscription and provider listing'
         ->status->toBe('published')
         ->published_at->not->toBeNull();
 });
+
+test('providers with active subscriptions cannot start another checkout', function () {
+    config([
+        'services.chapa.secret_key' => 'test-secret',
+        'services.chapa.base_url' => 'https://api.chapa.co',
+    ]);
+
+    Http::fake();
+
+    $category = Category::factory()->create();
+    $user = User::factory()->create();
+    $provider = Provider::factory()
+        ->for($user)
+        ->for($category)
+        ->create();
+    Service::factory()->for($provider)->for($category)->create();
+    ProviderSubscription::query()->create([
+        'provider_id' => $provider->id,
+        'plan' => 'monthly',
+        'amount' => 2000,
+        'currency' => 'ETB',
+        'chapa_tx_ref' => 'wellspot-active-test',
+        'chapa_checkout_url' => 'https://checkout.chapa.co/checkout/test',
+        'status' => 'active',
+        'started_at' => now(),
+        'expires_at' => now()->addDays(30),
+    ]);
+
+    $this
+        ->actingAs($user)
+        ->withHeader('X-Inertia', 'true')
+        ->post(route('provider.subscription.store'))
+        ->assertUnprocessable();
+
+    Http::assertNothingSent();
+});

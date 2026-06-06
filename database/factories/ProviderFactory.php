@@ -32,13 +32,27 @@ class ProviderFactory extends Factory
             'user_id' => User::factory(),
             'category_id' => Category::factory(),
             'name' => $name,
+            'name_am' => fake()->randomElement([
+                'ቦሌ ባላንስ ስፓ',
+                'ካዛንቺስ ዌልነስ ስቱዲዮ',
+                'ሳሪስ ስትሬንግዝ ላብ',
+                'ፒያሳ ማይንድፉል ኬር',
+            ]),
             'slug' => Str::slug($name),
             'headline' => fake()->randomElement([
                 'Calm recovery sessions for busy Addis schedules.',
                 'Personalized wellness plans near your neighborhood.',
                 'Book practical care without the WhatsApp back-and-forth.',
             ]),
+            'headline_am' => fake()->randomElement([
+                'ለተጨናነቀ የአዲስ አበባ ቀን የሚስማሙ የማገገሚያ ክፍለ ጊዜዎች።',
+                'በአካባቢዎ በቀላሉ የሚያገኙት የዌልነስ እቅድ።',
+            ]),
             'description' => fake()->paragraph(),
+            'description_am' => fake()->randomElement([
+                'ቀላል፣ አካባቢያዊ እና ለመጀመሪያ ጊዜ ደንበኞች ግልጽ የሆነ የዌልነስ አገልግሎት።',
+                'ማረፍ፣ መንቀሳቀስ እና ሰውነትዎን ማደስ የሚያግዝ ተግባራዊ እንክብካቤ።',
+            ]),
             'phone' => '+2519'.fake()->numerify('########'),
             'email' => fake()->safeEmail(),
             'address' => fake()->randomElement([
@@ -52,6 +66,7 @@ class ProviderFactory extends Factory
             'latitude' => fake()->randomFloat(7, 8.9, 9.08),
             'longitude' => fake()->randomFloat(7, 38.68, 38.86),
             'amenities' => fake()->randomElements(['Parking', 'Shower', 'Private rooms', 'Amharic support'], 2),
+            'amenities_am' => fake()->randomElements(['መኪና ማቆሚያ', 'ሻወር', 'የግል ክፍሎች', 'የአማርኛ ድጋፍ'], 2),
             'opening_hours' => [
                 'weekdays' => '08:00-20:00',
                 'weekends' => '09:00-18:00',

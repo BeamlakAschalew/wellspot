@@ -10,13 +10,19 @@ use Inertia\Testing\AssertableInertia as Assert;
 test('published provider detail page shows profile and active services', function () {
     $provider = Provider::factory()->create([
         'name' => 'Bole Recovery Studio',
+        'name_am' => 'ቦሌ ሪከቨሪ ስቱዲዮ',
+        'headline_am' => 'በቦሌ የማገገሚያ ክፍለ ጊዜዎች።',
+        'description_am' => 'በአማርኛ የተጻፈ የአቅራቢ መግለጫ።',
         'logo_path' => 'provider-logos/bole-recovery.png',
         'amenities' => ['Parking', 'Private rooms'],
+        'amenities_am' => ['መኪና ማቆሚያ', 'የግል ክፍሎች'],
         'opening_hours' => ['weekdays' => '08:00-20:00'],
     ]);
 
     $activeService = Service::factory()->for($provider)->create([
         'name' => 'Deep Tissue Massage',
+        'name_am' => 'ዲፕ ቲሹ ማሳጅ',
+        'description_am' => 'በአማርኛ የተጻፈ የአገልግሎት መግለጫ።',
         'status' => 'active',
         'price_amount' => 1200,
     ]);
@@ -42,10 +48,16 @@ test('published provider detail page shows profile and active services', functio
         ->assertInertia(fn (Assert $page) => $page
             ->component('details')
             ->where('provider.name', 'Bole Recovery Studio')
+            ->where('provider.name_am', 'ቦሌ ሪከቨሪ ስቱዲዮ')
+            ->where('provider.headline_am', 'በቦሌ የማገገሚያ ክፍለ ጊዜዎች።')
+            ->where('provider.description_am', 'በአማርኛ የተጻፈ የአቅራቢ መግለጫ።')
             ->where('provider.logo_url', $provider->logo_url)
             ->where('provider.amenities.0', 'Parking')
+            ->where('provider.amenities_am.0', 'መኪና ማቆሚያ')
             ->where('provider.opening_hours.weekdays', '08:00-20:00')
             ->where('provider.services.0.name', 'Deep Tissue Massage')
+            ->where('provider.services.0.name_am', 'ዲፕ ቲሹ ማሳጅ')
+            ->where('provider.services.0.description_am', 'በአማርኛ የተጻፈ የአገልግሎት መግለጫ።')
             ->where('provider.services.0.price_amount', 1200)
             ->missing('provider.services.1')
             ->where('provider.reviews.0.title', 'Excellent care')
