@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'user_id',
@@ -71,6 +72,22 @@ class Provider extends Model
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
+    }
+
+    /**
+     * @return HasMany<ProviderSubscription, $this>
+     */
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(ProviderSubscription::class);
+    }
+
+    /**
+     * @return HasOne<ProviderSubscription, $this>
+     */
+    public function subscription(): HasOne
+    {
+        return $this->hasOne(ProviderSubscription::class)->latestOfMany();
     }
 
     /**

@@ -3,12 +3,28 @@ import {
     CalendarClock,
     CheckCircle2,
     ClipboardList,
+    CreditCard,
     Pencil,
     Plus,
     Star,
     Trash2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type ChangeEvent,
+} from 'react';
+import { update as updateProviderProfile } from '@/actions/App/Http/Controllers/ProviderProfileController';
+import {
+    destroy as destroyProviderService,
+    store as storeProviderService,
+    update as updateProviderService,
+} from '@/actions/App/Http/Controllers/ProviderServiceController';
+import { store as startSubscriptionCheckout } from '@/actions/App/Http/Controllers/SubscriptionController';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,8 +53,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import ProviderProfileController from '@/actions/App/Http/Controllers/ProviderProfileController';
-import ProviderServiceController from '@/actions/App/Http/Controllers/ProviderServiceController';
+import AppLayout from '@/layouts/app-layout';
 import { dashboard as providerDashboard } from '@/routes/provider';
 
 type CategoryOption = {
@@ -92,12 +107,37 @@ type ProviderReview = {
     comment: string | null;
 };
 
+type ProviderSubscription = {
+    id: number;
+    plan: string;
+    amount: number;
+    currency: string;
+    status: string;
+    started_at: string | null;
+    expires_at: string | null;
+};
+
+type ProviderBilling = {
+    status: 'active' | 'due';
+    active_service_count: number;
+    service_monthly_amount: number;
+    monthly_total: number;
+    currency: string;
+    next_payment_due_at: string;
+    can_start_checkout: boolean;
+    checkout_blocker: string | null;
+};
+
 type DashboardProps = {
     provider: ProviderSummary;
+    googleMapsApiKey: string | null;
+    googleMapsMapId: string;
     categories: CategoryOption[];
     services: ProviderService[];
     bookings: ProviderBooking[];
     reviews: ProviderReview[];
+    subscription: ProviderSubscription | null;
+    billing: ProviderBilling;
     stats: {
         services: number;
         pending_bookings: number;
@@ -105,6 +145,103 @@ type DashboardProps = {
         average_rating: number;
     };
 };
+
+type ProviderLocation = {
+    lat: number;
+    lng: number;
+};
+
+type GoogleMapsEventListener = {
+    remove: () => void;
+};
+
+type GoogleLatLng = {
+    lat: () => number;
+    lng: () => number;
+};
+
+type GoogleMapMouseEvent = {
+    latLng?: GoogleLatLng | null;
+};
+
+type GoogleMap = {
+    setCenter: (location: ProviderLocation) => void;
+    setZoom: (zoom: number) => void;
+    addListener: (
+        eventName: 'click',
+        handler: (event: GoogleMapMouseEvent) => void,
+    ) => GoogleMapsEventListener;
+};
+
+type GoogleMarker = {
+    addListener: (
+        eventName: 'dragend',
+        handler: () => void,
+    ) => GoogleMapsEventListener;
+    map: GoogleMap | null;
+    position?: GooglePlaceLocation | null;
+};
+
+type GooglePlaceLocation =
+    | GoogleLatLng
+    | {
+          lat: number;
+          lng: number;
+      };
+
+type GooglePlace = {
+    displayName?: string;
+    fetchFields: (request: { fields: string[] }) => Promise<void>;
+    formattedAddress?: string;
+    location?: GooglePlaceLocation;
+};
+
+type GooglePlacePrediction = {
+    toPlace: () => GooglePlace;
+};
+
+type GooglePlaceSelectEvent = Event & {
+    placePrediction?: GooglePlacePrediction;
+};
+
+type GooglePlaceAutocompleteElement = HTMLElement & {
+    includedRegionCodes?: string[];
+    locationBias?: ProviderLocation;
+};
+
+type GoogleMapsNamespace = {
+    Map: new (
+        element: HTMLElement,
+        options: Record<string, unknown>,
+    ) => GoogleMap;
+    importLibrary: (name: 'maps' | 'marker' | 'places') => Promise<unknown>;
+};
+
+type GoogleMarkerLibrary = {
+    AdvancedMarkerElement: new (options: Record<string, unknown>) => GoogleMarker;
+};
+
+type GooglePlacesLibrary = {
+    PlaceAutocompleteElement: new (
+        options?: Record<string, unknown>,
+    ) => GooglePlaceAutocompleteElement;
+};
+
+declare global {
+    interface Window {
+        google?: {
+            maps: GoogleMapsNamespace;
+        };
+        __wellspotGoogleMapsLoaded?: () => void;
+    }
+}
+
+const ADDIS_ABABA_CENTER = {
+    lat: 9.0301,
+    lng: 38.7589,
+};
+
+let googleMapsPromise: Promise<GoogleMapsNamespace> | null = null;
 
 const money = (amount: number, currency = 'ETB') =>
     new Intl.NumberFormat('en-ET', {
@@ -123,6 +260,15 @@ const dateTime = (value: string | null) =>
           }).format(new Date(value))
         : 'Unscheduled';
 
+const dateOnly = (value: string | null) =>
+    value
+        ? new Intl.DateTimeFormat('en', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+          }).format(new Date(value))
+        : 'Not scheduled';
+
 function statusTone(status: string) {
     if (['active', 'published', 'confirmed', 'completed'].includes(status)) {
         return 'default' as const;
@@ -135,12 +281,137 @@ function statusTone(status: string) {
     return 'outline' as const;
 }
 
+function billingTitle(status: ProviderBilling['status']) {
+    if (status === 'active') {
+        return 'Subscription active';
+    }
+
+    return 'Payment due';
+}
+
+function billingDescription(status: ProviderBilling['status']) {
+    if (status === 'active') {
+        return 'Your provider listing is live. The next SaaS payment is due on the date below.';
+    }
+
+    return 'Providers pay monthly based on active services listed on WellSpot.';
+}
+
+function BillingPanel({
+    billing,
+    subscription,
+}: {
+    billing: ProviderBilling;
+    subscription: ProviderSubscription | null;
+}) {
+    return (
+        <aside id="billing" className="scroll-mt-6">
+            <Card className="rounded-lg border-primary/30 bg-primary/5">
+                <CardHeader>
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-2">
+                            <Badge variant={statusTone(billing.status)}>
+                                {billing.status}
+                            </Badge>
+                            <div>
+                                <CardTitle>{billingTitle(billing.status)}</CardTitle>
+                                <CardDescription className="mt-2">
+                                    {billingDescription(billing.status)}
+                                </CardDescription>
+                            </div>
+                        </div>
+                        <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-background text-primary shadow-sm">
+                            <CreditCard className="size-5" />
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="grid gap-3 rounded-lg border border-border/70 bg-background/80 p-4 text-sm">
+                        <div className="flex items-center justify-between gap-4">
+                            <span className="text-muted-foreground">
+                                Active services
+                            </span>
+                            <span className="font-medium">
+                                {billing.active_service_count}
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                            <span className="text-muted-foreground">
+                                Price per service
+                            </span>
+                            <span className="font-medium">
+                                {money(
+                                    billing.service_monthly_amount,
+                                    billing.currency,
+                                )}
+                            </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4 border-t border-border/70 pt-3">
+                            <span className="font-medium">Monthly total</span>
+                            <span className="text-lg font-semibold">
+                                {money(billing.monthly_total, billing.currency)}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="grid gap-1">
+                        <span className="text-xs font-medium uppercase text-muted-foreground">
+                            Next pay day
+                        </span>
+                        <span className="text-xl font-semibold">
+                            {dateOnly(billing.next_payment_due_at)}
+                        </span>
+                    </div>
+
+                    {subscription && (
+                        <div className="rounded-lg border border-border/70 bg-background/70 p-3 text-xs text-muted-foreground">
+                            Last checkout attempt:{' '}
+                            {money(subscription.amount, subscription.currency)} ·{' '}
+                            {subscription.plan}
+                        </div>
+                    )}
+
+                    <Form
+                        action={startSubscriptionCheckout()}
+                        options={{ preserveScroll: true }}
+                    >
+                        {({ processing }) => (
+                            <Button
+                                type="submit"
+                                className="w-full"
+                                disabled={
+                                    processing || !billing.can_start_checkout
+                                }
+                            >
+                                <CreditCard />
+                                {billing.status === 'active'
+                                    ? 'Renew with Chapa'
+                                    : 'Pay with Chapa'}
+                            </Button>
+                        )}
+                    </Form>
+
+                    {billing.checkout_blocker && (
+                        <p className="text-sm text-muted-foreground">
+                            {billing.checkout_blocker}
+                        </p>
+                    )}
+                </CardContent>
+            </Card>
+        </aside>
+    );
+}
+
 export default function Dashboard({
     provider,
+    googleMapsApiKey,
+    googleMapsMapId,
     categories,
     services,
     bookings,
     reviews,
+    subscription,
+    billing,
     stats,
 }: DashboardProps) {
     return (
@@ -148,7 +419,7 @@ export default function Dashboard({
             <Head title="Provider dashboard" />
 
             <div className="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-4">
-                <section>
+                <section className="grid gap-4 xl:grid-cols-[1fr_22rem]">
                     <Card className="rounded-lg">
                         <CardHeader className="gap-4 lg:flex-row lg:items-start lg:justify-between">
                             <div className="space-y-2">
@@ -198,6 +469,11 @@ export default function Dashboard({
                             />
                         </CardContent>
                     </Card>
+
+                    <BillingPanel
+                        billing={billing}
+                        subscription={subscription}
+                    />
                 </section>
 
                 <section>
@@ -212,6 +488,8 @@ export default function Dashboard({
                         <CardContent>
                             <ProviderProfileForm
                                 provider={provider}
+                                googleMapsApiKey={googleMapsApiKey}
+                                googleMapsMapId={googleMapsMapId}
                                 categories={categories}
                             />
                         </CardContent>
@@ -229,7 +507,7 @@ export default function Dashboard({
                         </CardHeader>
                         <CardContent>
                             <Form
-                                {...ProviderServiceController.store.form()}
+                                action={storeProviderService()}
                                 options={{ preserveScroll: true }}
                                 resetOnSuccess
                                 className="grid gap-4"
@@ -413,7 +691,7 @@ export default function Dashboard({
                                                 categories={categories}
                                             />
                                             <Form
-                                                {...ProviderServiceController.destroy.form(
+                                                action={destroyProviderService(
                                                     service.id,
                                                 )}
                                                 options={{
@@ -536,16 +814,124 @@ export default function Dashboard({
     );
 }
 
+function parseCoordinate(value: string | null): number | null {
+    if (!value) {
+        return null;
+    }
+
+    const parsed = Number(value);
+
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseLocation(
+    latitude: string | null,
+    longitude: string | null,
+): ProviderLocation | null {
+    const lat = parseCoordinate(latitude);
+    const lng = parseCoordinate(longitude);
+
+    if (lat === null || lng === null) {
+        return null;
+    }
+
+    return { lat, lng };
+}
+
+function formatCoordinate(value: number): string {
+    return value.toFixed(7);
+}
+
+function latLngToLocation(value: GoogleLatLng): ProviderLocation {
+    return {
+        lat: value.lat(),
+        lng: value.lng(),
+    };
+}
+
+function placeLocationToLocation(value: GooglePlaceLocation): ProviderLocation {
+    if (typeof value.lat === 'function' && typeof value.lng === 'function') {
+        return {
+            lat: value.lat(),
+            lng: value.lng(),
+        };
+    }
+
+    return {
+        lat: value.lat as number,
+        lng: value.lng as number,
+    };
+}
+
+function loadGoogleMaps(apiKey: string): Promise<GoogleMapsNamespace> {
+    if (window.google?.maps) {
+        return Promise.resolve(window.google.maps);
+    }
+
+    if (googleMapsPromise) {
+        return googleMapsPromise;
+    }
+
+    googleMapsPromise = new Promise((resolve, reject) => {
+        window.__wellspotGoogleMapsLoaded = () => {
+            if (window.google?.maps) {
+                resolve(window.google.maps);
+
+                return;
+            }
+
+            reject(new Error('Google Maps did not load.'));
+        };
+
+        const existingScript = document.getElementById('wellspot-google-maps');
+
+        if (existingScript) {
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.id = 'wellspot-google-maps';
+        script.async = true;
+        script.defer = true;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly&loading=async&callback=__wellspotGoogleMapsLoaded`;
+        script.onerror = () => reject(new Error('Google Maps failed to load.'));
+
+        document.head.appendChild(script);
+    });
+
+    return googleMapsPromise;
+}
+
 function ProviderProfileForm({
     provider,
+    googleMapsApiKey,
+    googleMapsMapId,
     categories,
 }: {
     provider: ProviderSummary;
+    googleMapsApiKey: string | null;
+    googleMapsMapId: string;
     categories: CategoryOption[];
 }) {
+    const [address, setAddress] = useState(provider.address);
+    const [latitude, setLatitude] = useState(provider.latitude ?? '');
+    const [longitude, setLongitude] = useState(provider.longitude ?? '');
+    const selectedLocation = parseLocation(latitude, longitude);
+    const handleLocationChange = useCallback(
+        (location: ProviderLocation, placeAddress?: string) => {
+            setLatitude(formatCoordinate(location.lat));
+            setLongitude(formatCoordinate(location.lng));
+
+            if (placeAddress) {
+                setAddress(placeAddress);
+            }
+        },
+        [],
+    );
+
     return (
         <Form
-            {...ProviderProfileController.update.form()}
+            action={updateProviderProfile()}
             options={{ preserveScroll: true }}
             className="grid gap-4"
         >
@@ -646,7 +1032,10 @@ function ProviderProfileForm({
                             <Input
                                 id="provider-address"
                                 name="address"
-                                defaultValue={provider.address}
+                                value={address}
+                                onChange={(
+                                    event: ChangeEvent<HTMLInputElement>,
+                                ) => setAddress(event.target.value)}
                                 required
                             />
                             <InputError message={errors.address} />
@@ -666,35 +1055,25 @@ function ProviderProfileForm({
                         </div>
                     </div>
 
-                    <div className="grid gap-4 lg:grid-cols-3">
+                    <input type="hidden" name="latitude" value={latitude} />
+                    <input type="hidden" name="longitude" value={longitude} />
+
+                    <div className="grid gap-4 lg:grid-cols-[1fr_0.32fr]">
                         <div className="grid gap-2">
-                            <Label htmlFor="provider-latitude">Latitude</Label>
-                            <Input
-                                id="provider-latitude"
-                                name="latitude"
-                                type="number"
-                                step="0.0000001"
-                                defaultValue={provider.latitude ?? ''}
-                                placeholder="9.0108"
+                            <Label>Map location</Label>
+                            <ProviderLocationPicker
+                                apiKey={googleMapsApiKey}
+                                mapId={googleMapsMapId}
+                                location={selectedLocation}
+                                onLocationChange={handleLocationChange}
+                                onManualLatitudeChange={setLatitude}
+                                onManualLongitudeChange={setLongitude}
+                                latitude={latitude}
+                                longitude={longitude}
                             />
                             <InputError message={errors.latitude} />
-                        </div>
-
-                        <div className="grid gap-2">
-                            <Label htmlFor="provider-longitude">
-                                Longitude
-                            </Label>
-                            <Input
-                                id="provider-longitude"
-                                name="longitude"
-                                type="number"
-                                step="0.0000001"
-                                defaultValue={provider.longitude ?? ''}
-                                placeholder="38.7613"
-                            />
                             <InputError message={errors.longitude} />
                         </div>
-
                         <div className="grid gap-2">
                             <Label htmlFor="provider-status">Status</Label>
                             <Select
@@ -734,6 +1113,269 @@ function ProviderProfileForm({
     );
 }
 
+function ProviderLocationPicker({
+    apiKey,
+    mapId,
+    location,
+    latitude,
+    longitude,
+    onLocationChange,
+    onManualLatitudeChange,
+    onManualLongitudeChange,
+}: {
+    apiKey: string | null;
+    mapId: string;
+    location: ProviderLocation | null;
+    latitude: string;
+    longitude: string;
+    onLocationChange: (
+        location: ProviderLocation,
+        placeAddress?: string,
+    ) => void;
+    onManualLatitudeChange: (value: string) => void;
+    onManualLongitudeChange: (value: string) => void;
+}) {
+    const mapRef = useRef<HTMLDivElement | null>(null);
+    const searchContainerRef = useRef<HTMLDivElement | null>(null);
+    const initialLocation = useMemo(() => location, []);
+    const [loadingState, setLoadingState] = useState<
+        'idle' | 'loading' | 'ready' | 'error'
+    >(apiKey ? 'idle' : 'error');
+
+    useEffect(() => {
+        if (!apiKey || !mapRef.current || !searchContainerRef.current) {
+            return;
+        }
+
+        let isActive = true;
+        let clickListener: GoogleMapsEventListener | null = null;
+        let dragListener: GoogleMapsEventListener | null = null;
+        let placeAutocomplete: GooglePlaceAutocompleteElement | null = null;
+        let marker: GoogleMarker | null = null;
+
+        setLoadingState('loading');
+
+        loadGoogleMaps(apiKey)
+            .then(async (maps) => {
+                const [, markerLibrary, placesLibrary] = await Promise.all([
+                    maps.importLibrary('maps'),
+                    maps.importLibrary(
+                        'marker',
+                    ) as Promise<GoogleMarkerLibrary>,
+                    maps.importLibrary(
+                        'places',
+                    ) as Promise<GooglePlacesLibrary>,
+                ]);
+
+                if (
+                    !isActive ||
+                    !mapRef.current ||
+                    !searchContainerRef.current
+                ) {
+                    return;
+                }
+
+                const map = new maps.Map(mapRef.current, {
+                    center: initialLocation ?? ADDIS_ABABA_CENTER,
+                    clickableIcons: false,
+                    fullscreenControl: false,
+                    mapId,
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                    zoom: initialLocation ? 16 : 12,
+                });
+
+                marker = new markerLibrary.AdvancedMarkerElement({
+                    gmpDraggable: true,
+                    map: initialLocation ? map : null,
+                    position: initialLocation ?? ADDIS_ABABA_CENTER,
+                    title: 'Provider location',
+                });
+
+                const applyLocation = (
+                    nextLocation: ProviderLocation,
+                    placeAddress?: string,
+                ) => {
+                    if (marker) {
+                        marker.position = nextLocation;
+                        marker.map = map;
+                    }
+
+                    map.setCenter(nextLocation);
+                    map.setZoom(16);
+                    onLocationChange(nextLocation, placeAddress);
+                };
+
+                clickListener = map.addListener('click', (event) => {
+                    if (!event.latLng) {
+                        return;
+                    }
+
+                    applyLocation(latLngToLocation(event.latLng));
+                });
+
+                dragListener = marker.addListener('dragend', () => {
+                    if (!marker?.position) {
+                        return;
+                    }
+
+                    applyLocation(placeLocationToLocation(marker.position));
+                });
+
+                placeAutocomplete = new placesLibrary.PlaceAutocompleteElement({
+                    includedRegionCodes: ['et'],
+                    locationBias: initialLocation ?? ADDIS_ABABA_CENTER,
+                });
+                placeAutocomplete.className = 'wellspot-place-autocomplete';
+
+                searchContainerRef.current.replaceChildren(placeAutocomplete);
+
+                placeAutocomplete.addEventListener(
+                    'gmp-select',
+                    async (event: Event) => {
+                        const placePrediction = (
+                            event as GooglePlaceSelectEvent
+                        ).placePrediction;
+
+                        if (!placePrediction) {
+                            return;
+                        }
+
+                        const place = placePrediction.toPlace();
+
+                        await place.fetchFields({
+                            fields: [
+                                'displayName',
+                                'formattedAddress',
+                                'location',
+                            ],
+                        });
+
+                        if (!place.location) {
+                            return;
+                        }
+
+                        applyLocation(
+                            placeLocationToLocation(place.location),
+                            place.formattedAddress ?? place.displayName,
+                        );
+                    },
+                );
+
+                setLoadingState('ready');
+            })
+            .catch((error: unknown) => {
+                console.error('Google Maps location picker failed to load.', error);
+
+                if (isActive) {
+                    setLoadingState('error');
+                }
+            });
+
+        return () => {
+            isActive = false;
+            clickListener?.remove();
+            dragListener?.remove();
+            placeAutocomplete?.remove();
+            if (marker) {
+                marker.map = null;
+            }
+        };
+    }, [apiKey, initialLocation, mapId, onLocationChange]);
+
+    if (!apiKey) {
+        return (
+            <ManualLocationFallback
+                latitude={latitude}
+                longitude={longitude}
+                onManualLatitudeChange={onManualLatitudeChange}
+                onManualLongitudeChange={onManualLongitudeChange}
+            />
+        );
+    }
+
+    return (
+        <div className="overflow-hidden rounded-lg border border-border/70">
+            <div className="border-b border-border/70 bg-muted/30 p-3">
+                <div
+                    ref={searchContainerRef}
+                    className="[&_.wellspot-place-autocomplete]:w-full [&_gmp-place-autocomplete]:w-full"
+                />
+            </div>
+            <div className="relative min-h-80">
+                <div ref={mapRef} className="absolute inset-0" />
+                {loadingState !== 'ready' && (
+                    <div className="absolute inset-0 grid place-items-center bg-background/80 p-6 text-center text-sm text-muted-foreground">
+                        {loadingState === 'error'
+                            ? 'Google Maps could not load. You can still save the profile and try again later.'
+                            : 'Loading map...'}
+                    </div>
+                )}
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/70 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                <span>
+                    Search, click the map, or drag the marker to set the exact
+                    provider location.
+                </span>
+                <span>
+                    {location
+                        ? `${formatCoordinate(location.lat)}, ${formatCoordinate(location.lng)}`
+                        : 'No location selected'}
+                </span>
+            </div>
+        </div>
+    );
+}
+
+function ManualLocationFallback({
+    latitude,
+    longitude,
+    onManualLatitudeChange,
+    onManualLongitudeChange,
+}: {
+    latitude: string;
+    longitude: string;
+    onManualLatitudeChange: (value: string) => void;
+    onManualLongitudeChange: (value: string) => void;
+}) {
+    return (
+        <div className="rounded-lg border border-dashed border-border/70 p-4">
+            <p className="text-sm text-muted-foreground">
+                Google Maps is not configured. Enter coordinates manually for
+                now.
+            </p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                    <Label htmlFor="provider-latitude">Latitude</Label>
+                    <Input
+                        id="provider-latitude"
+                        type="number"
+                        step="0.0000001"
+                        value={latitude}
+                        onChange={(event) =>
+                            onManualLatitudeChange(event.target.value)
+                        }
+                        placeholder="9.0108"
+                    />
+                </div>
+                <div className="grid gap-2">
+                    <Label htmlFor="provider-longitude">Longitude</Label>
+                    <Input
+                        id="provider-longitude"
+                        type="number"
+                        step="0.0000001"
+                        value={longitude}
+                        onChange={(event) =>
+                            onManualLongitudeChange(event.target.value)
+                        }
+                        placeholder="38.7613"
+                    />
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function ServiceEditDialog({
     service,
     categories,
@@ -761,7 +1403,7 @@ function ServiceEditDialog({
                     </DialogDescription>
                 </DialogHeader>
                 <Form
-                    {...ProviderServiceController.update.form(service.id)}
+                    action={updateProviderService(service.id)}
                     options={{ preserveScroll: true }}
                     className="grid gap-4"
                 >
@@ -959,11 +1601,14 @@ function EmptyState({ label }: { label: string }) {
     );
 }
 
-Dashboard.layout = {
-    breadcrumbs: [
-        {
-            title: 'Provider dashboard',
-            href: providerDashboard(),
-        },
-    ],
-};
+Dashboard.layout = [
+    AppLayout,
+    {
+        breadcrumbs: [
+            {
+                title: 'Provider dashboard',
+                href: providerDashboard(),
+            },
+        ],
+    },
+];

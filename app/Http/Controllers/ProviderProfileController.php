@@ -3,19 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProviderProfileRequest;
-use App\Models\Provider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
-class ProviderProfileController extends Controller
+class ProviderProfileController extends ProviderListingController
 {
     public function update(ProviderProfileRequest $request): RedirectResponse
     {
-        $provider = Provider::query()
-            ->where('user_id', $request->user()->id)
-            ->firstOrFail();
-
+        $provider = $this->providerForUser($request->user()->id);
         $validated = $request->validated();
 
         $provider->fill([
@@ -35,21 +31,5 @@ class ProviderProfileController extends Controller
         ]);
 
         return to_route('provider.dashboard');
-    }
-
-    private function uniqueSlug(string $slug, Provider $ignoreProvider): string
-    {
-        $candidate = $slug;
-        $counter = 2;
-
-        while (Provider::query()
-            ->whereKeyNot($ignoreProvider->id)
-            ->where('slug', $candidate)
-            ->exists()) {
-            $candidate = "{$slug}-{$counter}";
-            $counter++;
-        }
-
-        return $candidate;
     }
 }

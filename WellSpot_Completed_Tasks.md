@@ -16,11 +16,21 @@ Use this file as the iteration checkpoint. Completed items should not be scaffol
 - [x] Updated app sidebar/logo language from the Laravel starter kit to WellSpot provider dashboard.
 - [x] Added focused feature tests for provider dashboard, provider profile editing, and provider service management.
 
+## Backend Dev 1 Completion Slice
+
+- [x] Added guest-first booking creation without requiring client sign-up.
+- [x] Added provider-owned booking status transitions for pending, confirmed, completed, and cancelled bookings.
+- [x] Added guide-named provider listing routes/controller backed by the existing dashboard management UI.
+- [x] Added guide-named service controller while preserving dashboard service routes.
+- [x] Added guest review submission tied to booking contact verification.
+- [x] Added provider SaaS subscription records and Chapa HTTP-client integration without a Composer SDK.
+- [x] Added Chapa checkout initialization and callback verification routes for provider monthly billing only.
+- [x] Added deterministic category, provider, and service seeders for Addis Ababa demo data.
+- [x] Added focused feature tests for bookings, listing management, reviews, and Chapa subscription callbacks.
+
 ## Pending Next Iteration
 
-- [ ] Booking status transitions.
 - [ ] Public marketplace provider discovery pages.
 - [ ] Wellness quiz and AI recommendation flow.
 - [ ] Map and nearby search integration.
-- [ ] Provider monthly SaaS subscription billing.
-- [ ] Seed 25+ realistic Addis Ababa providers for demo data.
+- [ ] Expand demo seed data to 25+ realistic Addis Ababa providers.

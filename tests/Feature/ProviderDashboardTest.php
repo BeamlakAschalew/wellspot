@@ -3,6 +3,7 @@
 use App\Models\Booking;
 use App\Models\Category;
 use App\Models\Provider;
+use App\Models\ProviderSubscription;
 use App\Models\Review;
 use App\Models\Service;
 use App\Models\User;
@@ -25,7 +26,14 @@ test('authenticated users get a draft provider dashboard scaffold', function () 
             ->component('dashboard')
             ->where('provider.name', 'Mekdes Wellness\'s Wellness Studio')
             ->where('provider.status', 'draft')
+            ->where('googleMapsApiKey', config('services.google_maps.key'))
+            ->where('googleMapsMapId', config('services.google_maps.map_id'))
             ->where('stats.services', 0)
+            ->where('billing.status', 'due')
+            ->where('billing.active_service_count', 0)
+            ->where('billing.service_monthly_amount', 2000)
+            ->where('billing.monthly_total', 0)
+            ->where('billing.can_start_checkout', false)
             ->has('categories', 1)
         );
 
@@ -71,8 +79,41 @@ test('provider dashboard includes service booking and review summaries', functio
             ->where('stats.pending_bookings', 1)
             ->where('stats.completed_bookings', 1)
             ->where('stats.average_rating', 5)
+            ->where('billing.active_service_count', 1)
+            ->where('billing.monthly_total', 2000)
+            ->where('billing.can_start_checkout', true)
             ->where('services.0.name', 'Guided Breathwork')
             ->where('bookings.0.customer_name', 'Aster Tesfaye')
             ->where('reviews.0.title', 'Great care')
+        );
+});
+
+test('pending subscription attempts do not block retrying Chapa checkout', function () {
+    $category = Category::factory()->create();
+    $owner = User::factory()->create();
+    $provider = Provider::factory()
+        ->for($owner)
+        ->for($category)
+        ->draft()
+        ->create();
+    Service::factory()->for($provider)->for($category)->create();
+    ProviderSubscription::query()->create([
+        'provider_id' => $provider->id,
+        'plan' => 'monthly',
+        'amount' => 8000,
+        'currency' => 'ETB',
+        'chapa_tx_ref' => 'wellspot-pending-test',
+        'chapa_checkout_url' => 'https://checkout.chapa.co/checkout/test',
+        'status' => 'pending',
+    ]);
+
+    $response = $this->actingAs($owner)->get(route('provider.dashboard'));
+
+    $response
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('billing.status', 'due')
+            ->where('billing.can_start_checkout', true)
+            ->where('subscription.status', 'pending')
         );
 });

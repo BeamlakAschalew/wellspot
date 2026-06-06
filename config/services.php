@@ -22,6 +22,27 @@ return [
         'key' => env('RESEND_API_KEY'),
     ],
 
+    'google_maps' => [
+        'key' => env('GOOGLE_MAPS_API_KEY'),
+        'map_id' => env('GOOGLE_MAPS_MAP_ID', 'DEMO_MAP_ID'),
+        'region' => env('GOOGLE_MAPS_REGION', 'ET'),
+        'language' => env('GOOGLE_MAPS_LANGUAGE', 'en'),
+    ],
+
+    'chapa' => [
+        'secret_key' => env('CHAPA_SECRET_KEY'),
+        'public_key' => env('CHAPA_PUBLIC_KEY'),
+        'encryption_key' => env('CHAPA_ENCRYPTION_KEY', '123'),
+        'base_url' => env('CHAPA_BASE_URL', 'https://api.chapa.co'),
+        'service_monthly_amount' => (int) env('CHAPA_SERVICE_MONTHLY_AMOUNT', 2000),
+        'currency' => env('CHAPA_CURRENCY', 'ETB'),
+        'callback_url' => env('CHAPA_CALLBACK_URL'),
+        'return_url' => env('CHAPA_RETURN_URL'),
+        'webhook_secret' => env('CHAPA_WEBHOOK_SECRET'),
+        'checkout_title' => env('CHAPA_CHECKOUT_TITLE', 'WellSpot'),
+        'checkout_description' => env('CHAPA_CHECKOUT_DESCRIPTION', 'Provider plan'),
+    ],
+
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),

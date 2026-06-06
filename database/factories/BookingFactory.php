@@ -48,4 +48,11 @@ class BookingFactory extends Factory
             'starts_at' => now()->subDay(),
         ]);
     }
+
+    public function guest(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'user_id' => null,
+        ]);
+    }
 }

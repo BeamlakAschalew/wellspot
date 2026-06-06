@@ -30,4 +30,11 @@ class ReviewFactory extends Factory
             'is_published' => true,
         ];
     }
+
+    public function guest(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'user_id' => null,
+        ]);
+    }
 }

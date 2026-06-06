@@ -44,6 +44,8 @@ class ProviderDashboardController extends Controller
         $services = $provider->services()
             ->latest()
             ->get(['id', 'category_id', 'name', 'description', 'duration_minutes', 'price_amount', 'currency', 'status', 'sort_order']);
+        $activeServiceCount = $services->where('status', 'active')->count();
+        $serviceBillingRate = (int) config('services.chapa.service_monthly_amount', 2000);
 
         $recentBookings = $provider->bookings()
             ->with('service:id,name')
@@ -61,18 +63,25 @@ class ProviderDashboardController extends Controller
             ]);
 
         $latestReviews = $provider->reviews()
-            ->with('user:id,name')
+            ->with(['booking:id,customer_name', 'user:id,name'])
             ->where('is_published', true)
             ->latest()
             ->limit(4)
             ->get()
             ->map(fn ($review): array => [
                 'id' => $review->id,
-                'reviewer_name' => $review->user?->name,
+                'reviewer_name' => $review->user?->name ?? $review->booking?->customer_name,
                 'rating' => $review->rating,
                 'title' => $review->title,
                 'comment' => $review->comment,
             ]);
+
+        $subscription = $provider->subscription()
+            ->first(['id', 'plan', 'amount', 'currency', 'status', 'started_at', 'expires_at']);
+        $isSubscriptionActive = $subscription?->status === 'active'
+            && $subscription->expires_at !== null
+            && $subscription->expires_at->isFuture();
+        $nextPaymentDueAt = $isSubscriptionActive ? $subscription->expires_at : now();
 
         return Inertia::render('dashboard', [
             'provider' => [
@@ -90,6 +99,8 @@ class ProviderDashboardController extends Controller
                 'longitude' => $provider->longitude,
                 'category' => $provider->category?->name,
             ],
+            'googleMapsApiKey' => config('services.google_maps.key'),
+            'googleMapsMapId' => config('services.google_maps.map_id'),
             'categories' => Category::query()
                 ->orderBy('sort_order', 'asc')
                 ->get(['id', 'name'])
@@ -110,6 +121,29 @@ class ProviderDashboardController extends Controller
             ]),
             'bookings' => $recentBookings,
             'reviews' => $latestReviews,
+            'subscription' => $subscription ? [
+                'id' => $subscription->id,
+                'plan' => $subscription->plan,
+                'amount' => $subscription->amount,
+                'currency' => $subscription->currency,
+                'status' => $subscription->status,
+                'started_at' => $subscription->started_at?->toIso8601String(),
+                'expires_at' => $subscription->expires_at?->toIso8601String(),
+            ] : null,
+            'billing' => [
+                'status' => $isSubscriptionActive
+                    ? 'active'
+                    : 'due',
+                'active_service_count' => $activeServiceCount,
+                'service_monthly_amount' => $serviceBillingRate,
+                'monthly_total' => $activeServiceCount * $serviceBillingRate,
+                'currency' => $subscription?->currency ?? 'ETB',
+                'next_payment_due_at' => $nextPaymentDueAt->toIso8601String(),
+                'can_start_checkout' => $activeServiceCount > 0,
+                'checkout_blocker' => $activeServiceCount === 0
+                    ? __('Add at least one active service before subscribing.')
+                    : null,
+            ],
             'stats' => [
                 'services' => $services->count(),
                 'pending_bookings' => $provider->bookings()->where('status', 'pending')->count(),

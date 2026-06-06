@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { LayoutGrid } from 'lucide-react';
+import { CreditCard, LayoutGrid } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -21,6 +21,11 @@ const mainNavItems: NavItem[] = [
         title: 'Provider dashboard',
         href: providerDashboard(),
         icon: LayoutGrid,
+    },
+    {
+        title: 'Billing',
+        href: `${providerDashboard.url()}#billing`,
+        icon: CreditCard,
     },
 ];
 
