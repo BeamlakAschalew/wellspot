@@ -1,3 +1,9 @@
+import type { IconType } from 'react-icons';
+import { FaDiagnoses, FaSpa } from 'react-icons/fa';
+import { GiMeditation } from 'react-icons/gi';
+import { IoMdFitness } from 'react-icons/io';
+import { PiBowlSteamThin } from 'react-icons/pi';
+import { RiPsychotherapyLine, RiShieldCrossLine } from 'react-icons/ri';
 import testimonialSarahImage from '@/assets/wellspot/image-01.jpg';
 import providerMassageImage from '@/assets/wellspot/image-02.jpg';
 import testimonialDavidImage from '@/assets/wellspot/image-03.jpg';
@@ -5,57 +11,57 @@ import providerTherapyImage from '@/assets/wellspot/image-04.jpg';
 import providerYogaImage from '@/assets/wellspot/image-05.jpg';
 import heroImage from '@/assets/wellspot/image-06.jpg';
 import providerSpaImage from '@/assets/wellspot/image-07.jpg';
-import { GiMeditation } from 'react-icons/gi';
-import { FaSpa } from 'react-icons/fa';
-import { RiPsychotherapyLine } from 'react-icons/ri';
-import { PiBowlSteamThin } from 'react-icons/pi';
-import { IoMdFitness } from 'react-icons/io';
-import { RiShieldCrossLine } from 'react-icons/ri';
-import { FaDiagnoses } from 'react-icons/fa';
 
-const categories = [
+type Category = {
+    icon: IconType;
+    label: string;
+    iconClass: string;
+    backgroundClass: string;
+};
+
+const categories: Category[] = [
     {
-        icon: 'spa',
+        icon: FaDiagnoses,
         label: 'Massage',
         iconClass: 'text-primary',
         backgroundClass: 'bg-primary-fixed group-hover:bg-primary-fixed-dim',
     },
     {
-        icon: 'self_improvement',
+        icon: PiBowlSteamThin,
         label: 'Yoga',
         iconClass: 'text-secondary',
         backgroundClass:
             'bg-secondary-fixed group-hover:bg-secondary-fixed-dim',
     },
     {
-        icon: 'psychology',
+        icon: RiPsychotherapyLine,
         label: 'Therapy',
         iconClass: 'text-tertiary',
         backgroundClass: 'bg-tertiary-fixed group-hover:bg-tertiary-fixed-dim',
     },
     {
-        icon: 'hot_tub',
+        icon: FaSpa,
         label: 'Spa',
         iconClass: 'text-on-surface-variant',
         backgroundClass:
             'bg-surface-container group-hover:bg-surface-container-high',
     },
     {
-        icon: 'fitness_center',
+        icon: IoMdFitness,
         label: 'Fitness',
         iconClass: 'text-on-surface-variant',
         backgroundClass:
             'bg-surface-container group-hover:bg-surface-container-high',
     },
     {
-        icon: 'meditation',
+        icon: GiMeditation,
         label: 'Meditation',
         iconClass: 'text-on-surface-variant',
         backgroundClass:
             'bg-surface-container group-hover:bg-surface-container-high',
     },
     {
-        icon: 'health_and_safety',
+        icon: RiShieldCrossLine,
         label: 'Wellness',
         iconClass: 'text-on-surface-variant',
         backgroundClass:
@@ -202,12 +208,6 @@ function HeroSection() {
                             placeholder: 'Where to?',
                             hasBorder: true,
                         },
-                        {
-                            icon: 'calendar_month',
-                            label: 'Date',
-                            placeholder: 'Add dates',
-                            hasBorder: false,
-                        },
                     ].map((field) => (
                         <div
                             className={`flex w-full flex-1 items-center px-lg py-sm ${field.hasBorder ? 'md:border-r md:border-outline-variant/30' : ''}`}
@@ -258,25 +258,28 @@ function CategoriesSection() {
                 </a>
             </div>
             <div className="no-scrollbar flex gap-gutter overflow-x-auto pb-md">
-                {categories.map((category) => (
-                    <div
-                        className="group flex-shrink-0 cursor-pointer text-center"
-                        key={category.label}
-                    >
+                {categories.map((category) => {
+                    const CategoryIcon = category.icon;
+
+                    return (
                         <div
-                            className={`mb-sm flex h-20 w-20 items-center justify-center rounded-full transition-colors ${category.backgroundClass}`}
+                            className="group flex-shrink-0 cursor-pointer text-center"
+                            key={category.label}
                         >
-                            <MaterialIcon
-                                className={`${category.iconClass} text-[32px]`}
+                            <div
+                                className={`mb-sm flex h-20 w-20 items-center justify-center rounded-full transition-colors ${category.backgroundClass}`}
                             >
-                                {category.icon}
-                            </MaterialIcon>
+                                <CategoryIcon
+                                    aria-hidden="true"
+                                    className={`${category.iconClass} text-[32px]`}
+                                />
+                            </div>
+                            <p className="font-label-md text-label-md text-on-surface-variant">
+                                {category.label}
+                            </p>
                         </div>
-                        <p className="font-label-md text-label-md text-on-surface-variant">
-                            {category.label}
-                        </p>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </section>
     );
