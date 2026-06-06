@@ -2,8 +2,25 @@ import { Head } from '@inertiajs/react';
 import { Footer } from '@/components/user/footer';
 import { Header } from '@/components/user/header';
 import { MainContent } from '@/components/user/main-content';
+import type {
+    HomeCategory,
+    HomeFilters,
+    HomeProvider,
+} from '@/components/user/main-content';
 
-export default function Welcome() {
+type WelcomeProps = {
+    filters: HomeFilters;
+    categories: HomeCategory[];
+    providers: HomeProvider[];
+    topRatedProviders: HomeProvider[];
+};
+
+export default function Welcome({
+    filters,
+    categories,
+    providers,
+    topRatedProviders,
+}: WelcomeProps) {
     return (
         <>
             <Head title="WellSpot | Find Your Balance">
@@ -25,7 +42,12 @@ export default function Welcome() {
 
             <div className="wellspot-home min-h-screen scroll-smooth bg-background text-on-surface selection:bg-primary-fixed selection:text-on-primary-fixed">
                 <Header />
-                <MainContent />
+                <MainContent
+                    categories={categories}
+                    filters={filters}
+                    providers={providers}
+                    topRatedProviders={topRatedProviders}
+                />
                 <Footer />
             </div>
         </>

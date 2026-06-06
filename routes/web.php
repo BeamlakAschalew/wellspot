@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProviderDashboardController;
+use App\Http\Controllers\ProviderDetailController;
 use App\Http\Controllers\ProviderListingController;
 use App\Http\Controllers\ProviderProfileController;
 use App\Http\Controllers\ProviderServiceController;
@@ -10,8 +12,9 @@ use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\SubscriptionController;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'welcome')->name('home');
+Route::get('/', HomeController::class)->name('home');
 Route::inertia('/quiz', 'quiz')->name('quiz');
+Route::get('providers/{provider}', ProviderDetailController::class)->name('providers.show');
 Route::post('bookings', [BookingController::class, 'store'])->name('bookings.store');
 Route::post('reviews', [ReviewController::class, 'store'])->name('reviews.store');
 Route::get('provider/subscription/callback', [SubscriptionController::class, 'callback'])->name('provider.subscription.callback');

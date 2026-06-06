@@ -1,7 +1,9 @@
+import { home } from '@/routes';
+
 const navItems = [
-    { href: '#discover', label: 'Discover', isActive: true },
-    { href: '#how-it-works', label: 'How it Works' },
-    { href: '#providers', label: 'For Providers' },
+    { href: `${home.url()}#discover`, label: 'Discover', isActive: true },
+    { href: `${home.url()}#how-it-works`, label: 'How it Works' },
+    { href: `${home.url()}#providers`, label: 'For Providers' },
 ];
 
 export function Header() {
@@ -10,7 +12,7 @@ export function Header() {
             <div className="mx-auto flex h-16 max-w-container-max items-center justify-between px-margin-mobile md:px-lg">
                 <a
                     className="font-headline-md text-headline-md tracking-tight text-primary"
-                    href="#top"
+                    href={home.url()}
                 >
                     WellSpot
                 </a>

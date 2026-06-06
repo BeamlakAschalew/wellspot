@@ -54,10 +54,45 @@ test('providers can initialize a monthly Chapa subscription checkout', function 
     Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'Bearer test-secret')
         && $request['amount'] === 4000
         && $request['currency'] === 'ETB'
+        && $request['email'] === 'provider@example.test'
         && $request['customization']['title'] === 'WellSpot'
         && mb_strlen($request['customization']['title']) <= 16
         && mb_strlen($request['customization']['description']) <= 32
         && str_starts_with($request['tx_ref'], 'wellspot-'.$provider->id.'-'));
+});
+
+test('chapa checkout falls back to a dummy email when provider email is invalid', function () {
+    config([
+        'services.chapa.secret_key' => 'test-secret',
+        'services.chapa.base_url' => 'https://api.chapa.co',
+        'services.chapa.fallback_email' => 'billing@wellspot.test',
+    ]);
+
+    Http::fake([
+        'api.chapa.co/v1/transaction/initialize' => Http::response([
+            'status' => 'success',
+            'data' => [
+                'checkout_url' => 'https://checkout.chapa.co/checkout/test',
+            ],
+        ]),
+    ]);
+
+    $category = Category::factory()->create();
+    $user = User::factory()->create(['email' => 'not-an-email']);
+    $provider = Provider::factory()
+        ->for($user)
+        ->for($category)
+        ->draft()
+        ->create(['email' => 'also-not-email']);
+    Service::factory()->for($provider)->for($category)->create();
+
+    $this
+        ->actingAs($user)
+        ->withHeader('X-Inertia', 'true')
+        ->post(route('provider.subscription.store'))
+        ->assertStatus(409);
+
+    Http::assertSent(fn ($request) => $request['email'] === 'billing@wellspot.test');
 });
 
 test('successful Chapa callback activates the subscription and provider listing', function () {

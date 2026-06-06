@@ -25,13 +25,14 @@ class SubscriptionController extends Controller
             ?: route('provider.subscription.callback', ['tx_ref' => $txRef]);
         $returnUrl = config('services.chapa.return_url') ?: route('provider.dashboard');
         $currency = (string) config('services.chapa.currency', 'ETB');
+        $billingEmail = $this->billingEmail($provider, $request);
         $checkoutTitle = Str::limit((string) config('services.chapa.checkout_title', 'WellSpot'), 16, '');
         $checkoutDescription = Str::limit((string) config('services.chapa.checkout_description', 'Provider plan'), 32, '');
 
         $payload = [
             'amount' => $amount,
             'currency' => $currency,
-            'email' => $provider->email ?? $request->user()->email,
+            'email' => $billingEmail,
             'first_name' => $request->user()->name,
             'last_name' => $provider->name,
             'phone_number' => $provider->phone,
@@ -59,7 +60,7 @@ class SubscriptionController extends Controller
             'status' => 'pending',
         ]);
 
-        return Inertia::location($checkoutUrl);
+        return inertia_location($checkoutUrl);
     }
 
     public function callback(Request $request, ChapaClient $chapa): Response
@@ -114,5 +115,23 @@ class SubscriptionController extends Controller
         return Provider::query()
             ->where('user_id', $request->user()->id)
             ->firstOrFail();
+    }
+
+    private function billingEmail(Provider $provider, Request $request): string
+    {
+        $candidates = [
+            $provider->email,
+            $request->user()->email,
+            config('services.chapa.fallback_email'),
+            'billing@wellspot.test',
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (is_string($candidate) && filter_var($candidate, FILTER_VALIDATE_EMAIL)) {
+                return $candidate;
+            }
+        }
+
+        return 'billing@wellspot.test';
     }
 }

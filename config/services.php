@@ -36,6 +36,7 @@ return [
         'base_url' => env('CHAPA_BASE_URL', 'https://api.chapa.co'),
         'service_monthly_amount' => (int) env('CHAPA_SERVICE_MONTHLY_AMOUNT', 2000),
         'currency' => env('CHAPA_CURRENCY', 'ETB'),
+        'fallback_email' => env('CHAPA_FALLBACK_EMAIL', 'billing@wellspot.test'),
         'callback_url' => env('CHAPA_CALLBACK_URL'),
         'return_url' => env('CHAPA_RETURN_URL'),
         'webhook_secret' => env('CHAPA_WEBHOOK_SECRET'),

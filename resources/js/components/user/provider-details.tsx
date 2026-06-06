@@ -1,477 +1,611 @@
-import React, { useState } from 'react';
+import { Form } from '@inertiajs/react';
+import {
+    CalendarDays,
+    Check,
+    Clock,
+    Mail,
+    MapPin,
+    MessageSquareText,
+    Phone,
+    ShieldCheck,
+    Sparkles,
+    Star,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { store as storeBooking } from '@/routes/bookings';
 
-interface Service {
-    id: string;
+export type ProviderDetailService = {
+    id: number;
     name: string;
-    description: string;
-    duration: number;
-    price: number;
-}
+    slug: string;
+    description: string | null;
+    duration_minutes: number | null;
+    price_amount: number | null;
+    currency: string;
+};
 
-interface Day {
+type ProviderDetailReview = {
+    id: number;
+    reviewer_name: string | null;
+    rating: number;
+    title: string | null;
+    comment: string | null;
+    created_at: string | null;
+};
+
+export type ProviderDetailData = {
+    id: number;
+    name: string;
+    slug: string;
+    headline: string | null;
+    description: string | null;
+    phone: string | null;
+    email: string | null;
+    address: string | null;
+    neighborhood: string | null;
+    latitude: string | null;
+    longitude: string | null;
+    amenities: string[];
+    opening_hours: Record<string, string>;
+    category: {
+        name: string;
+        slug: string;
+    } | null;
+    services: ProviderDetailService[];
+    reviews: ProviderDetailReview[];
+    rating: number | null;
+    reviews_count: number;
+    starting_price: number | null;
+    currency: string;
+    is_featured: boolean;
+};
+
+type ProviderDetailsProps = {
+    provider: ProviderDetailData;
+    googleMapsApiKey: string | null;
+};
+
+type BookingDay = {
     id: string;
     label: string;
     formatted: string;
+};
+
+const timeSlots = ['09:00', '10:30', '12:00', '14:00', '15:30', '17:00'];
+
+function formatPrice(amount: number | null, currency: string): string {
+    if (amount === null) {
+        return 'Ask';
+    }
+
+    return new Intl.NumberFormat('en', {
+        currency,
+        maximumFractionDigits: 0,
+        style: 'currency',
+    }).format(amount);
 }
 
-interface Date {
-    id: string;
-    label: string;
-    formatted: string;
-}
-const SERVICES = [
-    {
-        id: 'deep-tissue',
-        name: 'Deep Tissue Massage',
-        description:
-            'Focuses on realigning deeper layers of muscles and connective tissue.',
-        duration: 60,
-        price: 120,
-    },
-    {
-        id: 'swedish',
-        name: 'Swedish Relaxation',
-        description:
-            'A gentle full-body massage to promote circulation and tranquility.',
-        duration: 90,
-        price: 155,
-    },
-    {
-        id: 'sports',
-        name: 'Sports Recovery Therapy',
-        description:
-            'Targeted work for athletes to improve performance and prevent injury.',
-        duration: 45,
-        price: 95,
-    },
-];
-
-const TIME_SLOTS = ['9:00 AM', '10:30 AM', '1:00 PM', '2:30 PM', '4:00 PM'];
-
-// Helper to generate the next 5 business days
-const getUpcomingDays = () => {
-    const days = [];
-    // Add 'as const' right here:
-    const options = {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-    } as const;
-    let current = new Date();
+function getUpcomingDays(): BookingDay[] {
+    const days: BookingDay[] = [];
+    const current = new Date();
 
     while (days.length < 5) {
         if (current.getDay() !== 0) {
             days.push({
                 id: current.toISOString().split('T')[0],
-                label: current.toLocaleDateString('en-US', options),
-                formatted: current.toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    month: 'long',
+                label: current.toLocaleDateString('en-US', {
                     day: 'numeric',
+                    month: 'short',
+                    weekday: 'short',
+                }),
+                formatted: current.toLocaleDateString('en-US', {
+                    day: 'numeric',
+                    month: 'long',
+                    weekday: 'long',
                     year: 'numeric',
                 }),
             });
         }
+
         current.setDate(current.getDate() + 1);
     }
+
     return days;
-};
-export default function WellSpotBooking() {
-    const [selectedService, setSelectedService] = useState<Service | null>(
-        null,
-    );
-    const [selectedDate, setSelectedDate] = useState<Day | null>(null);
-    const [selectedTime, setSelectedTime] = useState<string | null>(null);
-    const [isBooked, setIsBooked] = useState(false);
+}
 
-    const upcomingDays = getUpcomingDays();
+function googleMapsEmbedUrl(
+    provider: ProviderDetailData,
+    googleMapsApiKey: string | null,
+): string | null {
+    const query =
+        provider.latitude && provider.longitude
+            ? `${provider.latitude},${provider.longitude}`
+            : provider.address;
 
-    const handleServiceSelect = (service: Service) => {
-        // Prevent redundant state updates if they click the already selected service
-        if (selectedService?.id === service.id) return;
-
-        setSelectedService(service);
-        setSelectedTime(null);
-    };
-
-    const handleBookAppointment = () => {
-        if (selectedService && selectedDate && selectedTime) {
-            setIsBooked(true);
-        }
-    };
-
-    const resetWorkflow = () => {
-        setSelectedService(null);
-        setSelectedDate(null);
-        setSelectedTime(null);
-        setIsBooked(false);
-    };
-
-    if (isBooked) {
-        return (
-            <div className="mx-auto my-12 max-w-md animate-in rounded-2xl border border-zinc-200 bg-white p-8 text-center shadow-xl duration-300 zoom-in-95 fade-in">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2.5}
-                        stroke="currentColor"
-                        className="h-8 w-8"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M4.5 12.75l6 6 9-13.5"
-                        />
-                    </svg>
-                </div>
-                <h3 className="mb-2 text-2xl font-bold text-zinc-900">
-                    Appointment Confirmed!
-                </h3>
-                <p className="mb-6 text-sm text-zinc-600">
-                    Your session with Elena Rodriguez, LMT has been reserved.
-                </p>
-
-                <div className="mb-6 space-y-3 rounded-xl border border-zinc-100 bg-zinc-50 p-4 text-left text-sm">
-                    <p className="text-zinc-800">
-                        <strong className="text-zinc-900">Service:</strong>{' '}
-                        {selectedService?.name} ({selectedService?.duration}{' '}
-                        mins)
-                    </p>
-                    <p className="text-zinc-800">
-                        <strong className="text-zinc-900">Date:</strong> (
-                        {selectedDate?.formatted})
-                    </p>
-                    <p className="text-zinc-800">
-                        <strong className="text-zinc-900">Time:</strong>{' '}
-                        {selectedTime}
-                    </p>
-                    <p className="text-zinc-800">
-                        <strong className="text-zinc-900">Location:</strong> 420
-                        Wellness Way, Suite 102, San Francisco
-                    </p>
-                    <p className="rounded border border-emerald-100 bg-emerald-50 p-2 text-xs text-emerald-700">
-                        ✓ Free client parking reserved in the building basement.
-                    </p>
-                </div>
-
-                <button
-                    onClick={resetWorkflow}
-                    className="w-full rounded-xl bg-zinc-900 py-3 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
-                >
-                    Schedule Another Session
-                </button>
-            </div>
-        );
+    if (!query) {
+        return null;
     }
 
+    const encodedQuery = encodeURIComponent(query);
+
+    if (googleMapsApiKey) {
+        return `https://www.google.com/maps/embed/v1/place?key=${googleMapsApiKey}&q=${encodedQuery}`;
+    }
+
+    return `https://maps.google.com/maps?q=${encodedQuery}&z=15&output=embed`;
+}
+
+function startsAtValue(date: string | null, time: string | null): string {
+    if (!date || !time) {
+        return '';
+    }
+
+    return `${date}T${time}`;
+}
+
+export default function ProviderDetails({
+    provider,
+    googleMapsApiKey,
+}: ProviderDetailsProps) {
+    const [selectedServiceId, setSelectedServiceId] = useState(
+        provider.services[0]?.id ?? null,
+    );
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const [selectedTime, setSelectedTime] = useState<string | null>(null);
+    const upcomingDays = useMemo(() => getUpcomingDays(), []);
+    const selectedService = provider.services.find(
+        (service) => service.id === selectedServiceId,
+    );
+    const selectedDay = upcomingDays.find((day) => day.id === selectedDate);
+    const mapUrl = googleMapsEmbedUrl(provider, googleMapsApiKey);
+    const hours = Object.entries(provider.opening_hours ?? {});
+    const location =
+        [provider.neighborhood, provider.address].filter(Boolean).join(' - ') ||
+        'Location shared after booking';
+
     return (
-        <div className="mx-auto max-w-6xl px-4 py-8">
-            {/* Provider Branding Header */}
-            <div className="mb-8 flex flex-col justify-between gap-4 border-b border-zinc-200 pb-6 md:flex-row md:items-center">
-                <div>
-                    <h1 className="text-3xl font-bold text-zinc-900">
-                        Elena Rodriguez, LMT
-                    </h1>
-                    <p className="mt-1 flex items-center gap-1 text-sm text-zinc-600">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
-                            className="h-4 w-4 text-emerald-600"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
-                            />
-                        </svg>
-                        420 Wellness Way, Suite 102, San Francisco, CA
-                    </p>
-                </div>
-                <div className="flex items-center gap-2 self-start md:self-center">
-                    <span className="flex items-center gap-1 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
-                        ★ 4.9 (124 Reviews)
-                    </span>
-                    <span className="rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-800">
-                        Top Rated
-                    </span>
-                </div>
-            </div>
-
-            {/* Primary Workspace Split */}
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-                {/* Left Interactive Configuration Block */}
-                <div className="space-y-8 lg:col-span-8">
-                    {/* Step 1: Services Selection */}
-                    <section>
-                        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-zinc-900">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-900 font-mono text-xs text-white">
-                                1
+        <main className="pt-16">
+            <section className="bg-surface px-margin-mobile py-2xl">
+                <div className="mx-auto grid max-w-container-max gap-xl lg:grid-cols-[minmax(0,1fr)_360px]">
+                    <div>
+                        <div className="mb-md flex flex-wrap items-center gap-sm">
+                            <span className="rounded-full bg-primary-fixed px-md py-xs font-label-sm text-label-sm text-primary">
+                                {provider.category?.name ?? 'Wellness'}
                             </span>
-                            Select Therapeutic Service
-                        </h2>
-                        <div className="space-y-3">
-                            {SERVICES.map((service) => {
-                                const isSelected =
-                                    selectedService?.id === service.id;
-                                return (
-                                    <div
-                                        key={service.id}
-                                        onClick={() =>
-                                            handleServiceSelect(service)
-                                        }
-                                        className={`flex cursor-pointer flex-col justify-between gap-4 rounded-xl border bg-white p-4 transition-all sm:flex-row sm:items-center ${
-                                            isSelected
-                                                ? 'border-emerald-600 bg-emerald-50/10 ring-2 ring-emerald-600/10'
-                                                : 'border-zinc-200 hover:border-zinc-300 hover:shadow-sm'
-                                        }`}
-                                    >
-                                        <div className="flex-1">
-                                            <h3 className="flex items-center gap-2 text-base font-semibold text-zinc-900">
-                                                {service.name}
-                                                {isSelected && (
-                                                    <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-600">
-                                                        Selected
-                                                    </span>
-                                                )}
-                                            </h3>
-                                            <p className="mt-0.5 text-sm text-zinc-600">
-                                                {service.description}
-                                            </p>
-                                            <div className="mt-2 text-xs font-medium text-zinc-500">
-                                                {service.duration} mins • $
-                                                {service.price}
-                                            </div>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            className={`self-start rounded-lg border px-5 py-2 text-sm font-medium transition-all sm:self-center ${
-                                                isSelected
-                                                    ? 'border-emerald-600 bg-emerald-600 text-white'
-                                                    : 'border-zinc-300 text-zinc-700 hover:bg-zinc-50'
-                                            }`}
-                                        >
-                                            {isSelected ? 'Selected' : 'Select'}
-                                        </button>
-                                    </div>
-                                );
-                            })}
+                            {provider.is_featured && (
+                                <span className="inline-flex items-center gap-xs rounded-full bg-secondary-fixed px-md py-xs font-label-sm text-label-sm text-secondary">
+                                    <Sparkles className="h-4 w-4" />
+                                    Featured
+                                </span>
+                            )}
                         </div>
-                    </section>
 
-                    {/* Step 2: Date Selector (Horizontal Timeline) */}
-                    <section>
-                        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-zinc-900">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-900 font-mono text-xs text-white">
-                                2
+                        <h1 className="max-w-4xl font-display text-display text-on-surface">
+                            {provider.name}
+                        </h1>
+                        <p className="mt-md max-w-3xl font-body-lg text-body-lg text-on-surface-variant">
+                            {provider.headline ??
+                                provider.description ??
+                                'Local wellness provider on WellSpot.'}
+                        </p>
+
+                        <div className="mt-lg flex flex-wrap gap-md text-on-surface-variant">
+                            <span className="inline-flex items-center gap-xs">
+                                <Star className="h-5 w-5 fill-[#FFB800] text-[#FFB800]" />
+                                {provider.rating ?? 'New'} rating
+                                <span className="text-outline">
+                                    ({provider.reviews_count} reviews)
+                                </span>
                             </span>
-                            Choose Appointment Date
-                        </h2>
-                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                            {upcomingDays.map((day) => {
-                                const isSelected = selectedDate?.id === day.id;
-                                return (
-                                    <button
-                                        key={day.id}
-                                        onClick={() => {
-                                            setSelectedDate(day);
-                                            setSelectedTime(null);
-                                        }}
-                                        className={`rounded-xl border p-3 text-center transition-all ${
-                                            isSelected
-                                                ? 'border-emerald-600 bg-emerald-50 font-semibold text-emerald-900 shadow-sm'
-                                                : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50'
-                                        }`}
-                                    >
-                                        <span className="mb-1 block text-xs font-medium tracking-wider text-zinc-400 uppercase">
-                                            Available
-                                        </span>
-                                        <span className="text-sm">
-                                            {day.label}
-                                        </span>
-                                    </button>
-                                );
-                            })}
+                            <span className="inline-flex items-center gap-xs">
+                                <MapPin className="h-5 w-5 text-primary" />
+                                {location}
+                            </span>
+                            <span className="inline-flex items-center gap-xs">
+                                <CalendarDays className="h-5 w-5 text-primary" />
+                                From{' '}
+                                {formatPrice(
+                                    provider.starting_price,
+                                    provider.currency,
+                                )}
+                            </span>
                         </div>
-                    </section>
+                    </div>
 
-                    {/* Step 3: Time Slot Grid */}
-                    <section>
-                        <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-zinc-900">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-900 font-mono text-xs text-white">
-                                3
-                            </span>
-                            Select Time Window
+                    <aside className="rounded-lg border border-outline-variant/30 bg-surface-container p-lg shadow-sm">
+                        <h2 className="font-headline-sm text-headline-sm text-on-surface">
+                            Contact
                         </h2>
+                        <div className="mt-md space-y-sm">
+                            {provider.phone && (
+                                <a
+                                    className="flex items-center gap-sm text-on-surface-variant transition hover:text-primary"
+                                    href={`tel:${provider.phone}`}
+                                >
+                                    <Phone className="h-5 w-5" />
+                                    {provider.phone}
+                                </a>
+                            )}
+                            {provider.email && (
+                                <a
+                                    className="flex items-center gap-sm text-on-surface-variant transition hover:text-primary"
+                                    href={`mailto:${provider.email}`}
+                                >
+                                    <Mail className="h-5 w-5" />
+                                    {provider.email}
+                                </a>
+                            )}
+                            {provider.address && (
+                                <p className="flex items-start gap-sm text-on-surface-variant">
+                                    <MapPin className="mt-0.5 h-5 w-5 shrink-0" />
+                                    {provider.address}
+                                </p>
+                            )}
+                        </div>
+                    </aside>
+                </div>
+            </section>
 
-                        {!selectedDate ? (
-                            <div className="rounded-xl border-2 border-dashed border-zinc-200 bg-zinc-50 p-6 text-center text-sm text-zinc-400">
-                                Please unlock hours by selecting a target date
-                                first.
-                            </div>
-                        ) : (
-                            <div className="grid animate-in grid-cols-2 gap-2 duration-200 fade-in sm:grid-cols-5">
-                                {TIME_SLOTS.map((time) => {
-                                    const isSelected = selectedTime === time;
+            <section className="bg-surface-container-low px-margin-mobile py-2xl">
+                <div className="mx-auto grid max-w-container-max gap-xl lg:grid-cols-[minmax(0,1fr)_380px]">
+                    <div className="space-y-xl">
+                        <section>
+                            <h2 className="font-headline-lg text-headline-lg text-primary">
+                                Services
+                            </h2>
+                            <div className="mt-lg grid gap-md">
+                                {provider.services.map((service) => {
+                                    const isSelected =
+                                        selectedServiceId === service.id;
+
                                     return (
                                         <button
-                                            key={time}
-                                            onClick={() =>
-                                                setSelectedTime(time)
-                                            }
-                                            className={`rounded-xl border py-3 text-sm font-medium transition-all ${
+                                            className={`rounded-lg border bg-surface p-lg text-left transition ${
                                                 isSelected
-                                                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-md'
-                                                    : 'border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 hover:bg-zinc-50'
+                                                    ? 'border-primary shadow-md ring-2 ring-primary/15'
+                                                    : 'border-outline-variant/30 hover:border-primary/60'
                                             }`}
+                                            key={service.id}
+                                            onClick={() =>
+                                                setSelectedServiceId(service.id)
+                                            }
+                                            type="button"
                                         >
-                                            {time}
+                                            <span className="flex flex-col gap-md sm:flex-row sm:items-start sm:justify-between">
+                                                <span>
+                                                    <span className="font-headline-sm text-headline-sm text-on-surface">
+                                                        {service.name}
+                                                    </span>
+                                                    {service.description && (
+                                                        <span className="mt-xs block font-body-md text-body-md text-on-surface-variant">
+                                                            {
+                                                                service.description
+                                                            }
+                                                        </span>
+                                                    )}
+                                                </span>
+                                                <span className="flex shrink-0 items-center gap-md font-label-md text-label-md">
+                                                    <span className="inline-flex items-center gap-xs text-outline">
+                                                        <Clock className="h-4 w-4" />
+                                                        {service.duration_minutes ??
+                                                            'Flexible'}{' '}
+                                                        min
+                                                    </span>
+                                                    <span className="font-bold text-primary">
+                                                        {formatPrice(
+                                                            service.price_amount,
+                                                            service.currency,
+                                                        )}
+                                                    </span>
+                                                </span>
+                                            </span>
                                         </button>
                                     );
                                 })}
                             </div>
+                        </section>
+
+                        {provider.description && (
+                            <section className="rounded-lg bg-surface p-lg">
+                                <h2 className="font-headline-md text-headline-md text-on-surface">
+                                    About
+                                </h2>
+                                <p className="mt-sm font-body-md text-body-md leading-relaxed text-on-surface-variant">
+                                    {provider.description}
+                                </p>
+                            </section>
                         )}
-                    </section>
-                </div>
 
-                {/* Right Sticky Summary Sidebar */}
-                <div className="relative lg:col-span-4">
-                    <div className="space-y-4 lg:sticky lg:top-8">
-                        {/* Summary Panel */}
-                        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg">
-                            <h3 className="mb-4 text-base font-bold text-zinc-900">
-                                Book Appointment
-                            </h3>
+                        <section className="grid gap-md md:grid-cols-2">
+                            <div className="rounded-lg bg-surface p-lg">
+                                <h2 className="font-headline-sm text-headline-sm text-on-surface">
+                                    Amenities
+                                </h2>
+                                <div className="mt-md grid gap-sm">
+                                    {provider.amenities.length > 0 ? (
+                                        provider.amenities.map((amenity) => (
+                                            <span
+                                                className="inline-flex items-center gap-sm text-on-surface-variant"
+                                                key={amenity}
+                                            >
+                                                <Check className="h-4 w-4 text-primary" />
+                                                {amenity}
+                                            </span>
+                                        ))
+                                    ) : (
+                                        <p className="text-on-surface-variant">
+                                            Ask the provider for available
+                                            amenities.
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
 
-                            {selectedService ? (
-                                <div className="animate-in space-y-4 duration-300 fade-in">
-                                    <div className="flex items-start justify-between border-b border-zinc-100 pb-4">
-                                        <div>
-                                            <p className="text-sm font-semibold text-emerald-700">
-                                                {selectedService.name}
+                            <div className="rounded-lg bg-surface p-lg">
+                                <h2 className="font-headline-sm text-headline-sm text-on-surface">
+                                    Opening Hours
+                                </h2>
+                                <div className="mt-md space-y-sm">
+                                    {hours.length > 0 ? (
+                                        hours.map(([label, value]) => (
+                                            <div
+                                                className="flex items-center justify-between gap-md text-on-surface-variant"
+                                                key={label}
+                                            >
+                                                <span className="capitalize">
+                                                    {label.replace('_', ' ')}
+                                                </span>
+                                                <span className="font-medium text-on-surface">
+                                                    {value}
+                                                </span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-on-surface-variant">
+                                            Hours are confirmed when booking.
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </section>
+
+                        <section className="rounded-lg bg-surface p-lg">
+                            <h2 className="font-headline-md text-headline-md text-on-surface">
+                                Reviews
+                            </h2>
+                            <div className="mt-md grid gap-md">
+                                {provider.reviews.length > 0 ? (
+                                    provider.reviews.map((review) => (
+                                        <article
+                                            className="border-b border-outline-variant/20 pb-md last:border-b-0 last:pb-0"
+                                            key={review.id}
+                                        >
+                                            <div className="flex flex-wrap items-center justify-between gap-sm">
+                                                <h3 className="font-label-lg text-label-lg text-on-surface">
+                                                    {review.title ??
+                                                        'Wellness visit'}
+                                                </h3>
+                                                <span className="inline-flex items-center gap-xs text-primary">
+                                                    <Star className="h-4 w-4 fill-current" />
+                                                    {review.rating}
+                                                </span>
+                                            </div>
+                                            {review.comment && (
+                                                <p className="mt-xs text-on-surface-variant">
+                                                    {review.comment}
+                                                </p>
+                                            )}
+                                            <p className="mt-sm font-label-sm text-label-sm text-outline">
+                                                {review.reviewer_name ??
+                                                    'WellSpot client'}
+                                                {review.created_at
+                                                    ? ` - ${review.created_at}`
+                                                    : ''}
                                             </p>
-                                            <p className="mt-0.5 text-xs text-zinc-500">
-                                                {selectedService.duration}{' '}
-                                                Minute Session
-                                            </p>
-                                        </div>
-                                        <p className="text-base font-bold text-zinc-900">
-                                            ${selectedService.price}
+                                        </article>
+                                    ))
+                                ) : (
+                                    <p className="text-on-surface-variant">
+                                        No published reviews yet.
+                                    </p>
+                                )}
+                            </div>
+                        </section>
+
+                        {mapUrl && (
+                            <section className="overflow-hidden rounded-lg bg-surface">
+                                <iframe
+                                    className="h-[360px] w-full border-0"
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer-when-downgrade"
+                                    src={mapUrl}
+                                    title={`${provider.name} map`}
+                                />
+                            </section>
+                        )}
+                    </div>
+
+                    <aside className="lg:sticky lg:top-24 lg:self-start">
+                        <Form
+                            {...storeBooking.form()}
+                            className="rounded-lg border border-outline-variant/30 bg-surface p-lg shadow-lg"
+                            resetOnSuccess
+                        >
+                            {({ errors, processing, recentlySuccessful }) => (
+                                <div className="space-y-lg">
+                                    <div>
+                                        <h2 className="font-headline-md text-headline-md text-on-surface">
+                                            Book appointment
+                                        </h2>
+                                        <p className="mt-xs text-on-surface-variant">
+                                            Pick a service and send a booking
+                                            request. The provider confirms the
+                                            final time.
                                         </p>
                                     </div>
 
-                                    {/* Operational Status Verifiers */}
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-xs text-zinc-700">
-                                            <span className="text-base">
-                                                📅
-                                            </span>
-                                            <div>
-                                                <p className="font-medium text-zinc-900">
-                                                    Target Date
-                                                </p>
-                                                <p className="mt-0.5 text-zinc-500">
-                                                    {selectedDate
-                                                        ? selectedDate.formatted
-                                                        : 'Not selected yet'}
-                                                </p>
-                                            </div>
+                                    <input
+                                        name="service_id"
+                                        type="hidden"
+                                        value={selectedServiceId ?? ''}
+                                    />
+                                    <input
+                                        name="starts_at"
+                                        type="hidden"
+                                        value={startsAtValue(
+                                            selectedDate,
+                                            selectedTime,
+                                        )}
+                                    />
+
+                                    {selectedService && (
+                                        <div className="rounded-lg bg-surface-container p-md">
+                                            <p className="font-label-lg text-label-lg text-on-surface">
+                                                {selectedService.name}
+                                            </p>
+                                            <p className="mt-xs text-on-surface-variant">
+                                                {formatPrice(
+                                                    selectedService.price_amount,
+                                                    selectedService.currency,
+                                                )}{' '}
+                                                {selectedService.duration_minutes
+                                                    ? `- ${selectedService.duration_minutes} min`
+                                                    : ''}
+                                            </p>
                                         </div>
-                                        <div className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-xs text-zinc-700">
-                                            <span className="text-base">
-                                                ⏰
-                                            </span>
-                                            <div>
-                                                <p className="font-medium text-zinc-900">
-                                                    Reserved Frame
-                                                </p>
-                                                <p className="mt-0.5 text-zinc-500">
-                                                    {selectedTime
-                                                        ? selectedTime
-                                                        : 'Not selected yet'}
-                                                </p>
-                                            </div>
+                                    )}
+
+                                    <div>
+                                        <label className="font-label-md text-label-md text-on-surface">
+                                            Date
+                                        </label>
+                                        <div className="mt-sm grid grid-cols-2 gap-sm">
+                                            {upcomingDays.map((day) => (
+                                                <button
+                                                    className={`rounded-lg border px-sm py-sm text-sm transition ${
+                                                        selectedDate === day.id
+                                                            ? 'border-primary bg-primary-fixed text-primary'
+                                                            : 'border-outline-variant/40 hover:border-primary'
+                                                    }`}
+                                                    key={day.id}
+                                                    onClick={() => {
+                                                        setSelectedDate(day.id);
+                                                        setSelectedTime(null);
+                                                    }}
+                                                    type="button"
+                                                >
+                                                    {day.label}
+                                                </button>
+                                            ))}
                                         </div>
+                                        {errors.starts_at && (
+                                            <p className="mt-xs text-sm text-destructive">
+                                                {errors.starts_at}
+                                            </p>
+                                        )}
                                     </div>
-                                </div>
-                            ) : (
-                                <div className="space-y-2 py-8 text-center text-sm text-zinc-400">
-                                    <span className="block text-3xl">📋</span>
-                                    <p className="px-4">
-                                        Select a therapeutic service to
-                                        calculate itemized pricing and available
-                                        checkout workflows.
+
+                                    <div>
+                                        <label className="font-label-md text-label-md text-on-surface">
+                                            Time
+                                        </label>
+                                        <div className="mt-sm grid grid-cols-3 gap-sm">
+                                            {timeSlots.map((time) => (
+                                                <button
+                                                    className={`rounded-lg border px-sm py-sm text-sm transition ${
+                                                        selectedTime === time
+                                                            ? 'border-primary bg-primary text-on-primary'
+                                                            : 'border-outline-variant/40 hover:border-primary'
+                                                    }`}
+                                                    disabled={!selectedDate}
+                                                    key={time}
+                                                    onClick={() =>
+                                                        setSelectedTime(time)
+                                                    }
+                                                    type="button"
+                                                >
+                                                    {time}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {selectedDay && (
+                                            <p className="mt-xs font-label-sm text-label-sm text-outline">
+                                                {selectedDay.formatted}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="grid gap-sm">
+                                        <label className="font-label-md text-label-md text-on-surface">
+                                            Your name
+                                            <input
+                                                className="mt-xs w-full rounded-lg border border-outline-variant/40 bg-surface px-md py-sm text-on-surface focus:border-primary focus:ring-primary"
+                                                name="customer_name"
+                                                type="text"
+                                            />
+                                        </label>
+                                        {errors.customer_name && (
+                                            <p className="text-sm text-destructive">
+                                                {errors.customer_name}
+                                            </p>
+                                        )}
+
+                                        <label className="font-label-md text-label-md text-on-surface">
+                                            Phone
+                                            <input
+                                                className="mt-xs w-full rounded-lg border border-outline-variant/40 bg-surface px-md py-sm text-on-surface focus:border-primary focus:ring-primary"
+                                                name="customer_phone"
+                                                type="tel"
+                                            />
+                                        </label>
+                                        {errors.customer_phone && (
+                                            <p className="text-sm text-destructive">
+                                                {errors.customer_phone}
+                                            </p>
+                                        )}
+
+                                        <label className="font-label-md text-label-md text-on-surface">
+                                            Notes
+                                            <textarea
+                                                className="mt-xs min-h-24 w-full rounded-lg border border-outline-variant/40 bg-surface px-md py-sm text-on-surface focus:border-primary focus:ring-primary"
+                                                name="notes"
+                                            />
+                                        </label>
+                                    </div>
+
+                                    <button
+                                        className="font-label-lg text-label-lg flex w-full items-center justify-center gap-sm rounded-full bg-primary px-lg py-md text-on-primary transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                                        disabled={
+                                            processing ||
+                                            !selectedServiceId ||
+                                            !selectedDate ||
+                                            !selectedTime
+                                        }
+                                        type="submit"
+                                    >
+                                        <MessageSquareText className="h-5 w-5" />
+                                        {processing
+                                            ? 'Sending...'
+                                            : 'Request booking'}
+                                    </button>
+
+                                    {recentlySuccessful && (
+                                        <p className="rounded-lg bg-primary-fixed p-sm text-center font-label-md text-label-md text-primary">
+                                            Booking request sent.
+                                        </p>
+                                    )}
+
+                                    <p className="flex items-start gap-sm text-sm text-on-surface-variant">
+                                        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                                        No payment is collected until the
+                                        provider confirms availability.
                                     </p>
                                 </div>
                             )}
-
-                            {/* Action Confirmation Triggers */}
-                            <button
-                                type="button"
-                                onClick={handleBookAppointment}
-                                disabled={
-                                    !selectedService ||
-                                    !selectedDate ||
-                                    !selectedTime
-                                }
-                                className={`mt-6 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
-                                    selectedService &&
-                                    selectedDate &&
-                                    selectedTime
-                                        ? 'bg-zinc-900 text-white shadow-md hover:bg-zinc-800 active:scale-[0.98]'
-                                        : 'cursor-not-allowed bg-zinc-100 text-zinc-400 opacity-60'
-                                }`}
-                            >
-                                Book Appointment
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    strokeWidth={2}
-                                    stroke="currentColor"
-                                    className="h-4 w-4"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
-                                    />
-                                </svg>
-                            </button>
-
-                            <p className="mt-3 text-center text-xs text-zinc-400">
-                                You won't be charged yet
-                            </p>
-                        </div>
-
-                        {/* Quality Guarantees */}
-                        <div className="flex items-start gap-3 rounded-xl border border-emerald-600/10 bg-emerald-50/40 p-4">
-                            <span className="mt-0.5 text-base text-emerald-700">
-                                🛡️
-                            </span>
-                            <div>
-                                <p className="text-xs font-semibold text-emerald-800">
-                                    WellSpot Guarantee
-                                </p>
-                                <p className="mt-0.5 text-xs leading-relaxed text-zinc-600">
-                                    Free, zero-penalty cancellations up to 24
-                                    hours prior to your configured treatment
-                                    time.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                        </Form>
+                    </aside>
                 </div>
-            </div>
-        </div>
+            </section>
+        </main>
     );
 }
