@@ -4,14 +4,11 @@ import {
     CheckCircle2,
     ClipboardList,
     Pencil,
-    type LucideIcon,
     Plus,
-    Sparkles,
     Star,
     Trash2,
 } from 'lucide-react';
-import ProviderProfileController from '@/actions/App/Http/Controllers/ProviderProfileController';
-import ProviderServiceController from '@/actions/App/Http/Controllers/ProviderServiceController';
+import type { LucideIcon } from 'lucide-react';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,6 +37,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import ProviderProfileController from '@/actions/App/Http/Controllers/ProviderProfileController';
+import ProviderServiceController from '@/actions/App/Http/Controllers/ProviderServiceController';
 import { dashboard as providerDashboard } from '@/routes/provider';
 
 type CategoryOption = {
@@ -175,10 +174,6 @@ export default function Dashboard({
                                     </CardDescription>
                                 </div>
                             </div>
-                            <Button variant="outline" size="sm">
-                                <Sparkles />
-                                AI description
-                            </Button>
                         </CardHeader>
                         <CardContent className="grid gap-4 md:grid-cols-4">
                             <Metric
