@@ -87,6 +87,7 @@ class ProviderDashboardController extends Controller
             'provider' => [
                 'id' => $provider->id,
                 'name' => $provider->name,
+                'logo_url' => $provider->logo_url,
                 'headline' => $provider->headline,
                 'description' => $provider->description,
                 'status' => $provider->status,

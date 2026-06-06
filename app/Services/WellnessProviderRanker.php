@@ -222,6 +222,7 @@ class WellnessProviderRanker
                 'id' => $provider->id,
                 'name' => $provider->name,
                 'slug' => $provider->slug,
+                'logo_url' => $provider->logo_url,
                 'headline' => $provider->headline,
                 'description' => $provider->description,
                 'category' => $provider->category ? [

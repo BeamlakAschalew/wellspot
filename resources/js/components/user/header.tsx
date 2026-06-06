@@ -1,9 +1,10 @@
 import { home } from '@/routes';
+import { legacy as providerDashboard } from '@/routes/provider/dashboard';
 
 const navItems = [
     { href: `${home.url()}#discover`, label: 'Discover', isActive: true },
     { href: `${home.url()}#how-it-works`, label: 'How it Works' },
-    { href: `${home.url()}#providers`, label: 'For Providers' },
+    { href: providerDashboard.url(), label: 'For Providers' },
 ];
 
 export function Header() {

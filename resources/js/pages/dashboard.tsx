@@ -64,6 +64,7 @@ type CategoryOption = {
 type ProviderSummary = {
     id: number;
     name: string;
+    logo_url: string | null;
     headline: string | null;
     description: string | null;
     status: string;
@@ -931,11 +932,11 @@ function ProviderProfileForm({
 
     return (
         <Form
-            action={updateProviderProfile()}
+            {...updateProviderProfile.form()}
             options={{ preserveScroll: true }}
             className="grid gap-4"
         >
-            {({ errors, processing, recentlySuccessful }) => (
+            {({ errors, processing, progress, recentlySuccessful }) => (
                 <>
                     <div className="grid gap-4 lg:grid-cols-2">
                         <div className="grid gap-2">
@@ -973,6 +974,45 @@ function ProviderProfileForm({
                                 </SelectContent>
                             </Select>
                             <InputError message={errors.category_id} />
+                        </div>
+                    </div>
+
+                    <div className="grid gap-3 rounded-lg border border-border/70 bg-background/60 p-4 sm:grid-cols-[5rem_minmax(0,1fr)] sm:items-center">
+                        <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted text-xl font-semibold text-muted-foreground">
+                            {provider.logo_url ? (
+                                <img
+                                    alt={`${provider.name} logo`}
+                                    className="h-full w-full object-cover"
+                                    src={provider.logo_url}
+                                />
+                            ) : (
+                                provider.name.charAt(0).toUpperCase()
+                            )}
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="provider-logo">
+                                Provider logo
+                            </Label>
+                            <Input
+                                accept="image/*"
+                                id="provider-logo"
+                                name="logo"
+                                type="file"
+                            />
+                            <p className="text-sm text-muted-foreground">
+                                Optional image shown on provider cards and
+                                detail pages.
+                            </p>
+                            {progress && (
+                                <progress
+                                    className="h-2 w-full"
+                                    max="100"
+                                    value={progress.percentage}
+                                >
+                                    {progress.percentage}%
+                                </progress>
+                            )}
+                            <InputError message={errors.logo} />
                         </div>
                     </div>
 

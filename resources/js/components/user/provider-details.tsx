@@ -12,6 +12,7 @@ import {
     Star,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import providerSpaImage from '@/assets/wellspot/image-07.jpg';
 import { store as storeBooking } from '@/routes/bookings';
 
 export type ProviderDetailService = {
@@ -37,6 +38,7 @@ export type ProviderDetailData = {
     id: number;
     name: string;
     slug: string;
+    logo_url: string | null;
     headline: string | null;
     description: string | null;
     phone: string | null;
@@ -62,7 +64,6 @@ export type ProviderDetailData = {
 
 type ProviderDetailsProps = {
     provider: ProviderDetailData;
-    googleMapsApiKey: string | null;
 };
 
 type BookingDay = {
@@ -113,10 +114,7 @@ function getUpcomingDays(): BookingDay[] {
     return days;
 }
 
-function googleMapsEmbedUrl(
-    provider: ProviderDetailData,
-    googleMapsApiKey: string | null,
-): string | null {
+function googleMapsEmbedUrl(provider: ProviderDetailData): string | null {
     const query =
         provider.latitude && provider.longitude
             ? `${provider.latitude},${provider.longitude}`
@@ -127,10 +125,6 @@ function googleMapsEmbedUrl(
     }
 
     const encodedQuery = encodeURIComponent(query);
-
-    if (googleMapsApiKey) {
-        return `https://www.google.com/maps/embed/v1/place?key=${googleMapsApiKey}&q=${encodedQuery}`;
-    }
 
     return `https://maps.google.com/maps?q=${encodedQuery}&z=15&output=embed`;
 }
@@ -143,10 +137,7 @@ function startsAtValue(date: string | null, time: string | null): string {
     return `${date}T${time}`;
 }
 
-export default function ProviderDetails({
-    provider,
-    googleMapsApiKey,
-}: ProviderDetailsProps) {
+export default function ProviderDetails({ provider }: ProviderDetailsProps) {
     const [selectedServiceId, setSelectedServiceId] = useState(
         provider.services[0]?.id ?? null,
     );
@@ -157,7 +148,7 @@ export default function ProviderDetails({
         (service) => service.id === selectedServiceId,
     );
     const selectedDay = upcomingDays.find((day) => day.id === selectedDate);
-    const mapUrl = googleMapsEmbedUrl(provider, googleMapsApiKey);
+    const mapUrl = googleMapsEmbedUrl(provider);
     const hours = Object.entries(provider.opening_hours ?? {});
     const location =
         [provider.neighborhood, provider.address].filter(Boolean).join(' - ') ||
@@ -165,9 +156,10 @@ export default function ProviderDetails({
 
     return (
         <main className="pt-16">
-            <section className="bg-surface px-margin-mobile py-2xl">
-                <div className="mx-auto grid max-w-container-max gap-xl lg:grid-cols-[minmax(0,1fr)_360px]">
-                    <div>
+            <section className="relative overflow-hidden bg-surface px-margin-mobile py-2xl">
+                <div className="absolute inset-x-0 top-0 h-40 bg-primary-fixed/35" />
+                <div className="relative mx-auto grid w-full max-w-container-max items-end gap-xl lg:grid-cols-[minmax(0,1fr)_380px]">
+                    <div className="min-w-0">
                         <div className="mb-md flex flex-wrap items-center gap-sm">
                             <span className="rounded-full bg-primary-fixed px-md py-xs font-label-sm text-label-sm text-primary">
                                 {provider.category?.name ?? 'Wellness'}
@@ -180,28 +172,39 @@ export default function ProviderDetails({
                             )}
                         </div>
 
-                        <h1 className="max-w-4xl font-display text-display text-on-surface">
-                            {provider.name}
+                        <h1 className="w-full max-w-[56rem] font-display text-display text-balance text-on-surface">
+                            <span className="inline-flex min-w-0 flex-wrap items-center gap-md">
+                                {provider.logo_url && (
+                                    <img
+                                        alt={`${provider.name} logo`}
+                                        className="h-20 w-20 rounded-xl border border-outline-variant/30 bg-surface object-cover shadow-sm"
+                                        src={provider.logo_url}
+                                    />
+                                )}
+                                <span>{provider.name}</span>
+                            </span>
                         </h1>
-                        <p className="mt-md max-w-3xl font-body-lg text-body-lg text-on-surface-variant">
+                        <p className="mt-md w-full max-w-[44rem] font-body-lg text-body-lg text-pretty text-on-surface-variant">
                             {provider.headline ??
                                 provider.description ??
                                 'Local wellness provider on WellSpot.'}
                         </p>
 
-                        <div className="mt-lg flex flex-wrap gap-md text-on-surface-variant">
-                            <span className="inline-flex items-center gap-xs">
+                        <div className="mt-lg grid gap-sm text-on-surface-variant sm:flex sm:flex-wrap sm:gap-md">
+                            <span className="inline-flex min-w-0 items-center gap-xs">
                                 <Star className="h-5 w-5 fill-[#FFB800] text-[#FFB800]" />
                                 {provider.rating ?? 'New'} rating
                                 <span className="text-outline">
                                     ({provider.reviews_count} reviews)
                                 </span>
                             </span>
-                            <span className="inline-flex items-center gap-xs">
-                                <MapPin className="h-5 w-5 text-primary" />
-                                {location}
+                            <span className="inline-flex min-w-0 items-center gap-xs">
+                                <MapPin className="h-5 w-5 shrink-0 text-primary" />
+                                <span className="truncate sm:max-w-[28rem]">
+                                    {location}
+                                </span>
                             </span>
-                            <span className="inline-flex items-center gap-xs">
+                            <span className="inline-flex min-w-0 items-center gap-xs">
                                 <CalendarDays className="h-5 w-5 text-primary" />
                                 From{' '}
                                 {formatPrice(
@@ -212,42 +215,53 @@ export default function ProviderDetails({
                         </div>
                     </div>
 
-                    <aside className="rounded-lg border border-outline-variant/30 bg-surface-container p-lg shadow-sm">
-                        <h2 className="font-headline-sm text-headline-sm text-on-surface">
-                            Contact
-                        </h2>
-                        <div className="mt-md space-y-sm">
-                            {provider.phone && (
-                                <a
-                                    className="flex items-center gap-sm text-on-surface-variant transition hover:text-primary"
-                                    href={`tel:${provider.phone}`}
-                                >
-                                    <Phone className="h-5 w-5" />
-                                    {provider.phone}
-                                </a>
-                            )}
-                            {provider.email && (
-                                <a
-                                    className="flex items-center gap-sm text-on-surface-variant transition hover:text-primary"
-                                    href={`mailto:${provider.email}`}
-                                >
-                                    <Mail className="h-5 w-5" />
-                                    {provider.email}
-                                </a>
-                            )}
-                            {provider.address && (
-                                <p className="flex items-start gap-sm text-on-surface-variant">
-                                    <MapPin className="mt-0.5 h-5 w-5 shrink-0" />
-                                    {provider.address}
-                                </p>
-                            )}
+                    <aside className="overflow-hidden rounded-lg border border-outline-variant/30 bg-surface shadow-lg">
+                        <img
+                            alt={`${provider.name} wellness space`}
+                            className="h-44 w-full object-cover"
+                            src={provider.logo_url ?? providerSpaImage}
+                        />
+                        <div className="p-lg">
+                            <h2 className="font-headline-sm text-headline-sm text-on-surface">
+                                Contact
+                            </h2>
+                            <div className="mt-md grid gap-sm">
+                                {provider.phone && (
+                                    <a
+                                        className="flex min-w-0 items-center gap-sm rounded-lg bg-surface-container-low px-md py-sm text-on-surface-variant transition hover:text-primary"
+                                        href={`tel:${provider.phone}`}
+                                    >
+                                        <Phone className="h-5 w-5 shrink-0" />
+                                        <span className="truncate">
+                                            {provider.phone}
+                                        </span>
+                                    </a>
+                                )}
+                                {provider.email && (
+                                    <a
+                                        className="flex min-w-0 items-center gap-sm rounded-lg bg-surface-container-low px-md py-sm text-on-surface-variant transition hover:text-primary"
+                                        href={`mailto:${provider.email}`}
+                                    >
+                                        <Mail className="h-5 w-5 shrink-0" />
+                                        <span className="truncate">
+                                            {provider.email}
+                                        </span>
+                                    </a>
+                                )}
+                                {provider.address && (
+                                    <p className="flex min-w-0 items-start gap-sm rounded-lg bg-surface-container-low px-md py-sm text-on-surface-variant">
+                                        <MapPin className="mt-0.5 h-5 w-5 shrink-0" />
+                                        <span>{provider.address}</span>
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     </aside>
                 </div>
             </section>
 
             <section className="bg-surface-container-low px-margin-mobile py-2xl">
-                <div className="mx-auto grid max-w-container-max gap-xl lg:grid-cols-[minmax(0,1fr)_380px]">
+                <div className="mx-auto grid w-full max-w-container-max gap-xl lg:grid-cols-[minmax(0,1fr)_380px]">
                     <div className="space-y-xl">
                         <section>
                             <h2 className="font-headline-lg text-headline-lg text-primary">
@@ -260,7 +274,7 @@ export default function ProviderDetails({
 
                                     return (
                                         <button
-                                            className={`rounded-lg border bg-surface p-lg text-left transition ${
+                                            className={`rounded-lg border bg-surface p-lg text-left shadow-sm transition hover:-translate-y-0.5 ${
                                                 isSelected
                                                     ? 'border-primary shadow-md ring-2 ring-primary/15'
                                                     : 'border-outline-variant/30 hover:border-primary/60'
@@ -273,7 +287,7 @@ export default function ProviderDetails({
                                         >
                                             <span className="flex flex-col gap-md sm:flex-row sm:items-start sm:justify-between">
                                                 <span>
-                                                    <span className="font-headline-sm text-headline-sm text-on-surface">
+                                                    <span className="font-headline-sm text-headline-sm text-pretty text-on-surface">
                                                         {service.name}
                                                     </span>
                                                     {service.description && (
@@ -284,12 +298,12 @@ export default function ProviderDetails({
                                                         </span>
                                                     )}
                                                 </span>
-                                                <span className="flex shrink-0 items-center gap-md font-label-md text-label-md">
+                                                <span className="flex shrink-0 flex-wrap items-center gap-md font-label-md text-label-md sm:justify-end">
                                                     <span className="inline-flex items-center gap-xs text-outline">
                                                         <Clock className="h-4 w-4" />
-                                                        {service.duration_minutes ??
-                                                            'Flexible'}{' '}
-                                                        min
+                                                        {service.duration_minutes
+                                                            ? `${service.duration_minutes} min`
+                                                            : 'Flexible'}
                                                     </span>
                                                     <span className="font-bold text-primary">
                                                         {formatPrice(
@@ -306,7 +320,7 @@ export default function ProviderDetails({
                         </section>
 
                         {provider.description && (
-                            <section className="rounded-lg bg-surface p-lg">
+                            <section className="rounded-lg border border-outline-variant/20 bg-surface p-lg shadow-sm">
                                 <h2 className="font-headline-md text-headline-md text-on-surface">
                                     About
                                 </h2>
@@ -317,7 +331,7 @@ export default function ProviderDetails({
                         )}
 
                         <section className="grid gap-md md:grid-cols-2">
-                            <div className="rounded-lg bg-surface p-lg">
+                            <div className="rounded-lg border border-outline-variant/20 bg-surface p-lg shadow-sm">
                                 <h2 className="font-headline-sm text-headline-sm text-on-surface">
                                     Amenities
                                 </h2>
@@ -341,7 +355,7 @@ export default function ProviderDetails({
                                 </div>
                             </div>
 
-                            <div className="rounded-lg bg-surface p-lg">
+                            <div className="rounded-lg border border-outline-variant/20 bg-surface p-lg shadow-sm">
                                 <h2 className="font-headline-sm text-headline-sm text-on-surface">
                                     Opening Hours
                                 </h2>
@@ -349,7 +363,7 @@ export default function ProviderDetails({
                                     {hours.length > 0 ? (
                                         hours.map(([label, value]) => (
                                             <div
-                                                className="flex items-center justify-between gap-md text-on-surface-variant"
+                                                className="grid gap-xs text-on-surface-variant sm:flex sm:items-center sm:justify-between sm:gap-md"
                                                 key={label}
                                             >
                                                 <span className="capitalize">
@@ -369,7 +383,7 @@ export default function ProviderDetails({
                             </div>
                         </section>
 
-                        <section className="rounded-lg bg-surface p-lg">
+                        <section className="rounded-lg border border-outline-variant/20 bg-surface p-lg shadow-sm">
                             <h2 className="font-headline-md text-headline-md text-on-surface">
                                 Reviews
                             </h2>
@@ -413,7 +427,7 @@ export default function ProviderDetails({
                         </section>
 
                         {mapUrl && (
-                            <section className="overflow-hidden rounded-lg bg-surface">
+                            <section className="overflow-hidden rounded-lg border border-outline-variant/20 bg-surface shadow-sm">
                                 <iframe
                                     className="h-[360px] w-full border-0"
                                     loading="lazy"
@@ -482,7 +496,7 @@ export default function ProviderDetails({
                                         <div className="mt-sm grid grid-cols-2 gap-sm">
                                             {upcomingDays.map((day) => (
                                                 <button
-                                                    className={`rounded-lg border px-sm py-sm text-sm transition ${
+                                                    className={`min-h-11 rounded-lg border px-sm py-sm text-sm transition ${
                                                         selectedDate === day.id
                                                             ? 'border-primary bg-primary-fixed text-primary'
                                                             : 'border-outline-variant/40 hover:border-primary'
@@ -512,7 +526,7 @@ export default function ProviderDetails({
                                         <div className="mt-sm grid grid-cols-3 gap-sm">
                                             {timeSlots.map((time) => (
                                                 <button
-                                                    className={`rounded-lg border px-sm py-sm text-sm transition ${
+                                                    className={`min-h-11 rounded-lg border px-sm py-sm text-sm transition disabled:cursor-not-allowed disabled:opacity-45 ${
                                                         selectedTime === time
                                                             ? 'border-primary bg-primary text-on-primary'
                                                             : 'border-outline-variant/40 hover:border-primary'

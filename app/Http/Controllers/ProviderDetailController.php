@@ -36,12 +36,11 @@ class ProviderDetailController extends Controller
 
         return Inertia::render('details', [
             'provider' => $this->providerPayload($provider),
-            'googleMapsApiKey' => config('services.google_maps.key'),
         ]);
     }
 
     /**
-     * @return array{id: int, name: string, slug: string, headline: ?string, description: ?string, phone: ?string, email: ?string, address: ?string, neighborhood: ?string, latitude: ?string, longitude: ?string, amenities: array<int, string>, opening_hours: array<string, mixed>, category: ?array{name: string, slug: string}, services: array<int, array{id: int, name: string, slug: string, description: ?string, duration_minutes: ?int, price_amount: ?int, currency: string}>, reviews: array<int, array{id: int, reviewer_name: ?string, rating: int, title: ?string, comment: ?string, created_at: ?string}>, rating: ?float, reviews_count: int, starting_price: ?int, currency: string, is_featured: bool}
+     * @return array{id: int, name: string, slug: string, logo_url: ?string, headline: ?string, description: ?string, phone: ?string, email: ?string, address: ?string, neighborhood: ?string, latitude: ?string, longitude: ?string, amenities: array<int, string>, opening_hours: array<string, mixed>, category: ?array{name: string, slug: string}, services: array<int, array{id: int, name: string, slug: string, description: ?string, duration_minutes: ?int, price_amount: ?int, currency: string}>, reviews: array<int, array{id: int, reviewer_name: ?string, rating: int, title: ?string, comment: ?string, created_at: ?string}>, rating: ?float, reviews_count: int, starting_price: ?int, currency: string, is_featured: bool}
      */
     protected function providerPayload(Provider $provider): array
     {
@@ -55,6 +54,7 @@ class ProviderDetailController extends Controller
             'id' => $provider->id,
             'name' => $provider->name,
             'slug' => $provider->slug,
+            'logo_url' => $provider->logo_url,
             'headline' => $provider->headline,
             'description' => $provider->description,
             'phone' => $provider->phone,

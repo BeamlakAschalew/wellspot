@@ -18,14 +18,12 @@ import { GiMeditation } from 'react-icons/gi';
 import { IoMdFitness } from 'react-icons/io';
 import { PiBowlSteamThin } from 'react-icons/pi';
 import { RiPsychotherapyLine, RiShieldCrossLine } from 'react-icons/ri';
-import testimonialSarahImage from '@/assets/wellspot/image-01.jpg';
 import providerMassageImage from '@/assets/wellspot/image-02.jpg';
-import testimonialDavidImage from '@/assets/wellspot/image-03.jpg';
 import providerTherapyImage from '@/assets/wellspot/image-04.jpg';
 import providerYogaImage from '@/assets/wellspot/image-05.jpg';
 import heroImage from '@/assets/wellspot/image-06.jpg';
 import providerSpaImage from '@/assets/wellspot/image-07.jpg';
-import { home, register } from '@/routes';
+import { explore, home, register } from '@/routes';
 import { show as showProvider } from '@/routes/providers';
 
 export type HomeFilters = {
@@ -55,6 +53,7 @@ export type HomeProvider = {
     id: number;
     name: string;
     slug: string;
+    logo_url: string | null;
     headline: string | null;
     category: {
         name: string;
@@ -158,22 +157,22 @@ const steps = [
     },
 ];
 
-const testimonials = [
-    {
-        image: testimonialSarahImage,
-        imageAlt: 'A satisfied wellness marketplace customer portrait.',
-        name: 'Sarah Jenkins',
-        role: 'Marketing Executive',
-        quote: 'WellSpot completely changed how I manage my stress. I found an amazing therapist just blocks away from my office. The booking process is so seamless!',
-    },
-    {
-        image: testimonialDavidImage,
-        imageAlt: 'A relaxed wellness marketplace customer portrait.',
-        name: 'David Chen',
-        role: 'Software Engineer',
-        quote: 'As a busy developer, I often forget to take care of myself. WellSpot makes it easy to find high-quality yoga classes that fit into my schedule.',
-    },
-];
+// const testimonials = [
+//     {
+//         image: testimonialSarahImage,
+//         imageAlt: 'A satisfied wellness marketplace customer portrait.',
+//         name: 'Sarah Jenkins',
+//         role: 'Marketing Executive',
+//         quote: 'WellSpot completely changed how I manage my stress. I found an amazing therapist just blocks away from my office. The booking process is so seamless!',
+//     },
+//     {
+//         image: testimonialDavidImage,
+//         imageAlt: 'A relaxed wellness marketplace customer portrait.',
+//         name: 'David Chen',
+//         role: 'Software Engineer',
+//         quote: 'As a busy developer, I often forget to take care of myself. WellSpot makes it easy to find high-quality yoga classes that fit into my schedule.',
+//     },
+// ];
 
 function compactFilters(filters: HomeFilters): Partial<HomeFilters> {
     return Object.fromEntries(
@@ -194,7 +193,7 @@ function formatPrice(amount: number | null, currency: string) {
 }
 
 function categoryHref(filters: HomeFilters, category: string) {
-    return home.url({
+    return explore.url({
         query: compactFilters({
             ...filters,
             category: filters.category === category ? '' : category,
@@ -214,10 +213,7 @@ function HeroSection({
     function submit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
-        router.get(home.url(), compactFilters(form), {
-            preserveScroll: true,
-            replace: true,
-        });
+        router.get(explore.url(), compactFilters(form));
     }
 
     return (
@@ -235,21 +231,21 @@ function HeroSection({
             </div>
 
             <div className="relative z-10 w-full max-w-4xl text-center">
-                <h1 className="mb-md font-display text-display">
+                <h1 className="mb-md font-display text-display text-balance">
                     Find your balance
                 </h1>
-                <p className="mx-auto mb-xl w-full max-w-2xl text-on-surface-variant">
+                <p className="mx-auto mb-xl w-full text-pretty text-on-surface-variant">
                     Discover local wellness providers with active services, real
                     categories, and community ratings.
                 </p>
 
                 <form
-                    className="glass-search mx-auto flex max-w-3xl flex-col items-stretch gap-base rounded-[32px] border border-outline-variant/30 p-2 shadow-lg md:flex-row md:items-center md:rounded-full md:p-base"
+                    className="glass-search mx-auto grid max-w-3xl grid-cols-1 items-stretch gap-base rounded-[32px] border border-outline-variant/30 p-2 shadow-lg md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_180px_52px] md:items-center md:rounded-full md:p-base"
                     onSubmit={submit}
                 >
-                    <label className="flex w-full flex-1 items-center px-lg py-sm md:border-r md:border-outline-variant/30">
-                        <Search className="mr-sm h-5 w-5 text-primary" />
-                        <span className="w-full text-left">
+                    <label className="flex min-h-14 w-full min-w-0 items-center px-lg py-sm md:border-r md:border-outline-variant/30">
+                        <Search className="mr-sm h-5 w-5 shrink-0 text-primary" />
+                        <span className="min-w-0 flex-1 text-left">
                             <span className="block font-label-sm text-label-sm text-on-surface-variant uppercase">
                                 Service
                             </span>
@@ -268,9 +264,9 @@ function HeroSection({
                         </span>
                     </label>
 
-                    <label className="flex w-full flex-1 items-center px-lg py-sm md:border-r md:border-outline-variant/30">
-                        <MapPin className="mr-sm h-5 w-5 text-primary" />
-                        <span className="w-full text-left">
+                    <label className="flex min-h-14 w-full min-w-0 items-center px-lg py-sm md:border-r md:border-outline-variant/30">
+                        <MapPin className="mr-sm h-5 w-5 shrink-0 text-primary" />
+                        <span className="min-w-0 flex-1 text-left">
                             <span className="block font-label-sm text-label-sm text-on-surface-variant uppercase">
                                 Location
                             </span>
@@ -291,7 +287,7 @@ function HeroSection({
 
                     <select
                         aria-label="Category"
-                        className="rounded-full border border-outline-variant/40 bg-surface px-md py-sm font-label-md text-label-md text-on-surface focus:ring-2 focus:ring-primary focus:outline-none md:max-w-[180px]"
+                        className="min-h-12 rounded-full border border-outline-variant/40 bg-surface px-md py-sm font-label-md text-label-md text-on-surface focus:ring-2 focus:ring-primary focus:outline-none"
                         onChange={(event) =>
                             setForm((current) => ({
                                 ...current,
@@ -310,7 +306,7 @@ function HeroSection({
 
                     <button
                         aria-label="Search providers"
-                        className="flex w-full items-center justify-center rounded-full bg-primary p-md text-on-primary shadow-md transition-all hover:opacity-90 active:scale-95 md:w-auto"
+                        className="flex min-h-12 w-full items-center justify-center rounded-full bg-primary p-md text-on-primary shadow-md transition-all hover:opacity-90 active:scale-95 md:h-13 md:w-13"
                         type="submit"
                     >
                         <Search className="h-5 w-5" />
@@ -346,7 +342,7 @@ function CategoriesSection({
                 {filters.category && (
                     <Link
                         className="inline-flex items-center gap-xs self-start rounded-full border border-outline-variant px-md py-sm font-label-md text-label-md text-on-surface-variant transition hover:bg-surface-container"
-                        href={home.url({
+                        href={explore.url({
                             query: compactFilters({
                                 ...filters,
                                 category: '',
@@ -413,10 +409,11 @@ function ProviderCard({
         .map((service) => service.name)
         .join(', ');
     const location = provider.neighborhood ?? provider.address ?? 'Addis Ababa';
+    const cardImage = provider.logo_url ?? image;
 
     return (
         <Link
-            className="bento-card group flex min-h-[520px] flex-col overflow-hidden rounded-lg border border-outline-variant/30 bg-surface focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none"
+            className="bento-card group flex h-full min-h-[520px] flex-col overflow-hidden rounded-lg border border-outline-variant/30 bg-surface focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none"
             href={showProvider.url(provider.id)}
             prefetch
         >
@@ -424,8 +421,20 @@ function ProviderCard({
                 <img
                     alt={`${provider.name} wellness provider`}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    src={image}
+                    src={cardImage}
                 />
+                {provider.logo_url && (
+                    <div className="absolute bottom-md left-md flex max-w-[calc(100%-2rem)] items-center gap-sm rounded-lg bg-surface/95 px-sm py-xs shadow-sm backdrop-blur-sm">
+                        <img
+                            alt=""
+                            className="h-8 w-8 rounded-md object-cover"
+                            src={provider.logo_url}
+                        />
+                        <span className="truncate font-label-sm text-label-sm text-on-surface">
+                            {provider.name}
+                        </span>
+                    </div>
+                )}
                 <div className="absolute top-md right-md flex items-center gap-xs rounded-lg bg-surface/90 px-sm py-xs shadow-sm backdrop-blur-sm">
                     <Star
                         aria-hidden="true"
@@ -444,11 +453,11 @@ function ProviderCard({
             <div className="flex flex-1 flex-col justify-between p-md">
                 <div>
                     <div className="mb-xs flex items-start justify-between gap-sm">
-                        <div>
+                        <div className="min-w-0">
                             <p className="mb-xs font-label-sm text-label-sm text-secondary uppercase">
                                 {provider.category?.name ?? 'Wellness'}
                             </p>
-                            <h3 className="font-headline-sm text-headline-sm text-on-surface">
+                            <h3 className="font-headline-sm text-headline-sm text-pretty text-on-surface">
                                 {provider.name}
                             </h3>
                         </div>
@@ -459,7 +468,7 @@ function ProviderCard({
                             )}
                         </span>
                     </div>
-                    <p className="font-body-sm text-body-sm text-on-surface-variant">
+                    <p className="line-clamp-3 font-body-sm text-body-sm text-on-surface-variant">
                         {provider.headline ?? serviceNames}
                     </p>
                     {serviceNames && (
@@ -468,7 +477,7 @@ function ProviderCard({
                         </p>
                     )}
                 </div>
-                <div className="mt-md flex items-center justify-between gap-sm border-t border-outline-variant/20 pt-md">
+                <div className="mt-md grid gap-sm border-t border-outline-variant/20 pt-md sm:flex sm:items-center sm:justify-between">
                     <span className="flex min-w-0 items-center gap-xs font-label-sm text-label-sm text-outline">
                         <MapPin className="h-4 w-4 shrink-0" />
                         <span className="truncate">{location}</span>
@@ -525,7 +534,7 @@ function ProvidersSection({
                 </div>
 
                 {visibleProviders.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-gutter sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid grid-cols-1 items-stretch gap-gutter sm:grid-cols-2 lg:grid-cols-4">
                         {visibleProviders.map((provider, index) => (
                             <ProviderCard
                                 image={
@@ -565,7 +574,7 @@ function HowItWorksSection() {
                 <h2 className="mb-md font-headline-lg text-headline-lg text-primary">
                     How WellSpot Works
                 </h2>
-                <p className="mx-auto max-w-2xl text-on-surface-variant">
+                <p className="mx-auto text-on-surface-variant">
                     Wellness made simple. Find and book your favorite services
                     in three easy steps.
                 </p>
@@ -598,58 +607,58 @@ function HowItWorksSection() {
     );
 }
 
-function TestimonialsSection() {
-    return (
-        <section className="overflow-hidden bg-primary-container py-2xl text-on-primary-container">
-            <div className="mx-auto max-w-container-max px-margin-mobile">
-                <div className="flex flex-col items-center gap-2xl md:flex-row">
-                    <div className="w-full md:w-1/3">
-                        <h2 className="mb-md font-headline-lg text-headline-lg text-on-primary">
-                            Our Community
-                        </h2>
-                        <p className="mb-xl font-body-lg text-body-lg text-on-primary-container/80">
-                            Join people who found their wellness routine through
-                            WellSpot.
-                        </p>
-                    </div>
-                    <div className="no-scrollbar flex w-full gap-gutter overflow-x-auto pb-md md:w-2/3">
-                        {testimonials.map((testimonial) => (
-                            <div
-                                className="w-full shrink-0 rounded-lg border border-on-primary/10 bg-on-primary/5 p-xl backdrop-blur-md sm:w-[400px]"
-                                key={testimonial.name}
-                            >
-                                <div className="mb-lg flex items-center gap-md">
-                                    <img
-                                        alt={testimonial.imageAlt}
-                                        className="h-16 w-16 rounded-full border-2 border-on-primary-container/30 object-cover"
-                                        src={testimonial.image}
-                                    />
-                                    <div>
-                                        <h4 className="font-headline-sm text-headline-sm">
-                                            {testimonial.name}
-                                        </h4>
-                                        <p className="font-label-sm text-label-sm text-on-primary-container/60">
-                                            {testimonial.role}
-                                        </p>
-                                    </div>
-                                </div>
-                                <p className="font-body-md text-body-md italic opacity-90">
-                                    "{testimonial.quote}"
-                                </p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        </section>
-    );
-}
+// function TestimonialsSection() {
+//     return (
+//         <section className="overflow-hidden bg-primary-container py-2xl text-on-primary-container">
+//             <div className="mx-auto max-w-container-max px-margin-mobile">
+//                 <div className="flex flex-col items-center gap-2xl md:flex-row">
+//                     <div className="w-full md:w-1/3">
+//                         <h2 className="mb-md font-headline-lg text-headline-lg text-on-primary">
+//                             Our Community
+//                         </h2>
+//                         <p className="mb-xl font-body-lg text-body-lg text-on-primary-container/80">
+//                             Join people who found their wellness routine through
+//                             WellSpot.
+//                         </p>
+//                     </div>
+//                     <div className="no-scrollbar flex w-full gap-gutter overflow-x-auto pb-md md:w-2/3">
+//                         {testimonials.map((testimonial) => (
+//                             <div
+//                                 className="w-full shrink-0 rounded-lg border border-on-primary/10 bg-on-primary/5 p-xl backdrop-blur-md sm:w-[400px]"
+//                                 key={testimonial.name}
+//                             >
+//                                 <div className="mb-lg flex items-center gap-md">
+//                                     <img
+//                                         alt={testimonial.imageAlt}
+//                                         className="h-16 w-16 rounded-full border-2 border-on-primary-container/30 object-cover"
+//                                         src={testimonial.image}
+//                                     />
+//                                     <div>
+//                                         <h4 className="font-headline-sm text-headline-sm">
+//                                             {testimonial.name}
+//                                         </h4>
+//                                         <p className="font-label-sm text-label-sm text-on-primary-container/60">
+//                                             {testimonial.role}
+//                                         </p>
+//                                     </div>
+//                                 </div>
+//                                 <p className="font-body-md text-body-md italic opacity-90">
+//                                     "{testimonial.quote}"
+//                                 </p>
+//                             </div>
+//                         ))}
+//                     </div>
+//                 </div>
+//             </div>
+//         </section>
+//     );
+// }
 
 function CtaSection() {
     return (
         <section className="px-margin-mobile py-2xl text-center">
-            <div className="mx-auto max-w-2xl">
-                <h2 className="mb-md font-display text-display tracking-tight">
+            <div className="mx-auto">
+                <h2 className="mb-md font-display text-display text-balance">
                     Ready to feel better?
                 </h2>
                 <p className="mb-xl font-body-lg text-body-lg text-on-surface-variant">
@@ -705,7 +714,6 @@ export function MainContent({
                 topRatedProviders={topRatedProviders}
             />
             <HowItWorksSection />
-            <TestimonialsSection />
             <CtaSection />
         </main>
     );
